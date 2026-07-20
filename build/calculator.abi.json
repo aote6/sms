@@ -1,0 +1,21 @@
+{
+  "module": "Calculator",
+  "version": "1.0.0",
+  "runtime": "python",
+  "exports": [
+    {
+      "name": "add",
+      "params": [
+        {
+          "name": "a",
+          "type": "Any"
+        },
+        {
+          "name": "b",
+          "type": "Any"
+        }
+      ],
+      "returns": "Any"
+    }
+  ]
+}

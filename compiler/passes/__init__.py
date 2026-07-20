@@ -8,3 +8,4 @@ from .copyprop import CopyPropagationPass
 from .verify_ssa import VerifySSA
 from .gvn import GVN
 from .inline import Inline
+from .verify_type import VerifyType

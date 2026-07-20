@@ -1,0 +1,13 @@
+{
+  "session_id": "ebb57bc9",
+  "start_time": 1784552235.4783986,
+  "end_time": 1784552235.478746,
+  "status": "success",
+  "metrics": {
+    "duration_ms": 0.34737586975097656
+  },
+  "diagnostics": [],
+  "modules": [],
+  "artifacts": [],
+  "packages": []
+}

@@ -1,0 +1,35 @@
+{
+  "build_id": "5f6ab1d8",
+  "timestamp": 1784554999.271355,
+  "status": "failed",
+  "modules": {
+    "Theme": {
+      "status": "success",
+      "duration": 0.00021562498295679688,
+      "artifact": "build/theme.py",
+      "error": null,
+      "hash": null
+    },
+    "Keyboard": {
+      "status": "failed",
+      "duration": 0.0,
+      "artifact": null,
+      "error": "编译失败: Keyboard 语法错误",
+      "hash": null
+    },
+    "Core": {
+      "status": "skipped",
+      "duration": 0.0,
+      "artifact": null,
+      "error": "依赖失败，跳过",
+      "hash": null
+    },
+    "IME": {
+      "status": "skipped",
+      "duration": 0.0,
+      "artifact": null,
+      "error": "依赖失败，跳过",
+      "hash": null
+    }
+  }
+}

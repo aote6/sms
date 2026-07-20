@@ -1,52 +1,37 @@
-from dataclasses import dataclass
-import hashlib
-import json
-from pathlib import Path
-from typing import Optional
+"""BuildCache - 构建缓存"""
 
-@dataclass
-class BuildInfo:
-    node_id: str
-    fingerprint: str
+import json
+import os
+from pathlib import Path
+
 
 class BuildCache:
-    def __init__(self, path=".smscache"):
-        self.path = Path(path)
-        self.data: dict[str, str] = {}
-        if self.path.exists():
-            try:
-                self.data = json.loads(self.path.read_text())
-            except:
-                self.data = {}
-    
-    def fingerprint(self, obj) -> str:
-        """计算对象的指纹"""
+    def __init__(self, filename=".smscache"):
+        self.filename = filename
+        self.data = {}
+        self.load()
+
+    def load(self):
+        if not os.path.exists(self.filename):
+            return
         try:
-            if hasattr(obj, 'to_dict'):
-                payload = obj.to_dict()
-            else:
-                payload = repr(obj)
-            payload_str = json.dumps(payload, sort_keys=True, default=str)
-        except:
-            payload_str = str(obj)
-        return hashlib.sha256(payload_str.encode()).hexdigest()
-    
-    def changed(self, node_id: str, ir) -> bool:
-        """检查IR是否变化"""
-        fp = self.fingerprint(ir)
-        old = self.data.get(node_id)
-        return old != fp
-    
-    def update(self, node_id: str, ir):
-        """更新缓存"""
-        self.data[node_id] = self.fingerprint(ir)
-    
-    def get(self, node_id: str) -> Optional[str]:
-        return self.data.get(node_id)
-    
+            with open(self.filename, encoding="utf-8") as f:
+                self.data = json.load(f)
+        except (json.JSONDecodeError, ValueError):
+            self.data = {}
+
     def save(self):
-        self.path.write_text(json.dumps(self.data, indent=2))
-    
+        with open(self.filename, "w", encoding="utf-8") as f:
+            json.dump(self.data, f, indent=2, ensure_ascii=False)
+
+    def get(self, key):
+        return self.data.get(key)
+
+    def put(self, key, value):
+        self.data[key] = value
+
     def clear(self):
         self.data = {}
-        self.save()
+
+    def has(self, key):
+        return key in self.data

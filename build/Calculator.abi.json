@@ -1,0 +1,21 @@
+{
+  "module": "Calculator",
+  "version": "1.0.0",
+  "exports": [
+    {
+      "name": "add",
+      "params": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
+        }
+      ],
+      "returns": "Any"
+    }
+  ],
+  "imports": []
+}

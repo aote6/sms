@@ -1,65 +1,69 @@
-"""IR 指令 - 使用 SSAValue"""
+"""IR 指令 - 使用 SSAValue + 类型"""
 
 from dataclasses import dataclass
 from typing import List, Any, Optional
 from compiler.value import SSAValue
+from compiler.typesystem import ANY, Type
 
 
 class IRInstruction:
-    """IR 指令基类"""
     pass
 
 
 @dataclass
 class Load(IRInstruction):
-    """加载变量: result = load name"""
     result: SSAValue
     source: str
+    result_type: Type = ANY
 
 
 @dataclass
 class Store(IRInstruction):
-    """存储变量: store value -> target"""
     target: str
     value: SSAValue
+    value_type: Type = ANY
 
 
 @dataclass
 class BinaryOp(IRInstruction):
-    """二元运算: result = op left, right"""
     result: SSAValue
     op: str
     left: SSAValue
     right: SSAValue
+    result_type: Type = ANY
+    left_type: Type = ANY
+    right_type: Type = ANY
 
 
 @dataclass
 class Return(IRInstruction):
-    """返回值"""
     value: Optional[SSAValue] = None
+    value_type: Type = ANY
 
 
 @dataclass
 class Call(IRInstruction):
-    """函数调用: result = call fn_name(args)"""
     result: SSAValue
     fn_name: str
     args: List[SSAValue] = None
+    result_type: Type = ANY
+    arg_types: List[Type] = None
 
     def __post_init__(self):
         if self.args is None:
             self.args = []
+        if self.arg_types is None:
+            self.arg_types = []
 
 
 @dataclass
 class Const(IRInstruction):
-    """常量: result = const value"""
     result: SSAValue
     value: Any
+    result_type: Type = ANY
 
 
 @dataclass
 class Parameter:
-    """函数参数"""
     name: str
-    type: Any = None
+    type: Type = ANY

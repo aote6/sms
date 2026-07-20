@@ -11,6 +11,10 @@ class IRVerifier:
     def verify_function(self, fn):
         defined = set()
 
+        # 参数被视为已定义
+        for p in fn.parameters:
+            defined.add(p.name)
+
         for block in fn.blocks:
             for inst in block.instructions:
                 if isinstance(inst, Compare):

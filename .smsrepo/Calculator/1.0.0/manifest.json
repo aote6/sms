@@ -1,0 +1,31 @@
+{
+  "format": "1.0",
+  "package": "Calculator",
+  "files": [
+    {
+      "kind": "python",
+      "file": "calculator.py",
+      "sha256": "9344b6e28eda784ce360d8e8b64fdff629786158faf7a841d853674ef78b25e8"
+    },
+    {
+      "kind": "cpp",
+      "file": "calculator.cpp",
+      "sha256": "51b24f436a1d04793c42335c9d26b732f62a96d38e9e3e161fd814aab97a2efc"
+    },
+    {
+      "kind": "rust",
+      "file": "calculator.rs",
+      "sha256": "64c3bf0b4fdf8e3d9fb18b55f413dcfad2a24d127551a751386e33a56f84d3cc"
+    },
+    {
+      "kind": "abi",
+      "file": "calculator.abi.json",
+      "sha256": "d0636f3af1001a9f22fcbc90a6d992370973f90b485df5a1407355c4b6cf2d25"
+    },
+    {
+      "kind": "manifest",
+      "file": "calculator.manifest.json",
+      "sha256": "9cde902f7c955d324e9b7e01844c0ca5eac8dba536f40300204a378f3e488a46"
+    }
+  ]
+}
