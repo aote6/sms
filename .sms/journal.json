@@ -1,35 +1,35 @@
 {
-  "build_id": "5f6ab1d8",
-  "timestamp": 1784554999.271355,
-  "status": "failed",
+  "build_id": "8dbf74bc",
+  "timestamp": 1784555369.379302,
+  "status": "success",
   "modules": {
-    "Theme": {
+    "Core": {
       "status": "success",
-      "duration": 0.00021562498295679688,
-      "artifact": "build/theme.py",
+      "duration": 0,
+      "artifact": "cached",
       "error": null,
-      "hash": null
+      "hash": "cached"
     },
     "Keyboard": {
-      "status": "failed",
-      "duration": 0.0,
-      "artifact": null,
-      "error": "编译失败: Keyboard 语法错误",
-      "hash": null
+      "status": "success",
+      "duration": 0,
+      "artifact": "cached",
+      "error": null,
+      "hash": "cached"
     },
-    "Core": {
-      "status": "skipped",
-      "duration": 0.0,
-      "artifact": null,
-      "error": "依赖失败，跳过",
-      "hash": null
+    "Theme": {
+      "status": "success",
+      "duration": 0,
+      "artifact": "cached",
+      "error": null,
+      "hash": "cached"
     },
     "IME": {
-      "status": "skipped",
-      "duration": 0.0,
-      "artifact": null,
-      "error": "依赖失败，跳过",
-      "hash": null
+      "status": "success",
+      "duration": 0,
+      "artifact": "cached",
+      "error": null,
+      "hash": "cached"
     }
   }
 }

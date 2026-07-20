@@ -32,14 +32,25 @@ class BuildTask:
         with self._lock:
             self.state = TaskState.FAILED
 
+    def skip(self):
+        with self._lock:
+            self.state = TaskState.SKIPPED
+
     def dependency_done(self) -> bool:
-        """一个依赖完成，递减 deps，返回是否 ready"""
         with self._lock:
             self.deps -= 1
             return self.deps == 0 and self.state == TaskState.WAITING
 
     def ready(self) -> bool:
         return self.deps == 0 and self.state == TaskState.WAITING
+
+    def finish_and_release(self, ready_queue):
+        """完成并释放依赖"""
+        self.finish()
+        self.node.built = True
+        for user in self.users:
+            if user.dependency_done() and user.node.dirty:
+                ready_queue.append(user)
 
     def __repr__(self):
         return f"BuildTask(name={self.name}, deps={self.deps}, state={self.state})"

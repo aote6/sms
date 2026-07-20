@@ -1,24 +1,20 @@
-"""BackendStage - 生成后端代码"""
+"""BackendStage - 后端生成阶段"""
 
-from pipeline.stage import Stage
+from pipeline.stage_base import PipelineStage
 
 
-class BackendStage(Stage):
+class BackendStage(PipelineStage):
     name = "Backend"
 
-    def run(self, context):
-        if context.skip_build:
-            print("  skip backend")
-            return
+    def run(self, ctx):
+        print(f"▶ {self.name}")
+        backend = ctx.backend
+        ir_modules = ctx.ir_modules
 
-        session = context.session
-        backend = context.backend
-        ir = context.ir
-
-        if backend and ir:
-            artifact = backend.emit(ir)
-            context.artifact = artifact
-            session.add_artifact(artifact)
-            print(f"  artifact {artifact.path}")
+        if backend and ir_modules:
+            for ir in ir_modules:
+                artifact = backend.emit(ir)
+                ctx.add_artifact(artifact)
+            print(f"  ✅ {self.name} 完成: {len(ir_modules)} 个产物")
         else:
-            print("  (跳过)")
+            print(f"  ⏭ {self.name} 跳过")

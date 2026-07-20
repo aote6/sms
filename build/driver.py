@@ -1,4 +1,4 @@
-"""BuildDriver - 并行任务驱动构建（支持失败恢复 + Journal）"""
+"""BuildDriver - 并行任务驱动构建（集成 Planner）"""
 
 from collections import deque
 from build.task_graph import TaskGraph
@@ -8,6 +8,8 @@ from build.scheduler import BuildScheduler
 from build.task_state import TaskState
 from build.result import TaskResult
 from build.journal import BuildJournal, ModuleRecord
+from build.planner import BuildPlanner
+from build.cache_state import CacheState
 
 
 class BuildDriver:
@@ -42,6 +44,15 @@ class BuildDriver:
         print(f"  并行度: {self.workers}")
         print("=" * 50)
 
+        # Planner - 前置缓存检查
+        planner = BuildPlanner(self.executor.cache, self.executor.registry)
+        ready_queue = deque()
+        cache_hits = 0
+
+        for task in tg.all_tasks():
+            if task.ready() and task.node.dirty:
+                ready_queue.append(task)
+
         failed = set()
         skipped = set()
         finished = set()
@@ -49,9 +60,29 @@ class BuildDriver:
         self.results = []
         self.journal = BuildJournal()
 
+        # 处理缓存命中的任务
+        all_tasks = [t for t in tg.all_tasks() if t.node.dirty]
+        ready, cached, state_map = planner.plan(all_tasks)
+
+        for task in cached:
+            task.skip()
+            skipped.add(task.name)
+            cache_hits += 1
+            self.journal.add(ModuleRecord(
+                name=task.name,
+                status="success",
+                duration=0,
+                artifact="cached",
+                hash="cached",
+            ))
+            # 释放依赖
+            task.finish_and_release(ready_queue)
+            print(f"  ⚡ {task.name} (缓存命中)")
+
+        # 重新构建 ready_queue
         ready_queue = deque()
-        for task in tg.all_tasks():
-            if task.ready() and task.node.dirty:
+        for task in ready:
+            if task.ready() and task.node.dirty and task.name not in skipped:
                 ready_queue.append(task)
 
         workers = [BuildWorker(self.executor, i + 1) for i in range(self.workers)]
@@ -64,7 +95,7 @@ class BuildDriver:
                     task = ready_queue.popleft()
 
                     if self._has_failed_dep(task, failed, skipped):
-                        task.state = TaskState.SKIPPED
+                        task.skip()
                         skipped.add(task.name)
                         self.journal.add(ModuleRecord(
                             name=task.name,
@@ -115,9 +146,7 @@ class BuildDriver:
                                 break
 
                         if task:
-                            for user in task.users:
-                                if user.dependency_done() and user.node.dirty:
-                                    ready_queue.append(user)
+                            task.finish_and_release(ready_queue)
                     else:
                         failed.add(result.task)
                         self.journal.add(ModuleRecord(
@@ -133,34 +162,27 @@ class BuildDriver:
         for task in tg.all_tasks():
             if task.node.dirty and task.name not in built and task.name not in failed and task.name not in skipped:
                 if self._has_failed_dep(task, failed, skipped):
-                    task.state = TaskState.SKIPPED
+                    task.skip()
                     skipped.add(task.name)
                     self.journal.add(ModuleRecord(
                         name=task.name,
                         status="skipped",
                         error="依赖失败，跳过",
                     ))
-                    self.results.append(TaskResult(
-                        task=task.name,
-                        success=False,
-                        duration=0,
-                        error=Exception("依赖失败，跳过"),
-                    ))
                     print(f"  ⏭ {task.name} (依赖失败)")
 
-        # 更新 Journal 状态
         if failed:
             self.journal.finish("failed")
         else:
             self.journal.finish("success")
 
-        # 保存 Journal
         self.journal.save(journal_path)
 
         print()
         print("=" * 50)
         print("Build Result")
         print("=" * 50)
+        print(f"  缓存命中: {cache_hits}")
 
         for task in tg.all_tasks():
             if task.node.dirty:

@@ -1,21 +1,35 @@
 {
   "module": "Calculator",
   "version": "1.0.0",
-  "runtime": "python",
   "exports": [
     {
       "name": "add",
       "params": [
         {
           "name": "a",
-          "type": "Any"
+          "type": "int"
         },
         {
           "name": "b",
-          "type": "Any"
+          "type": "int"
+        }
+      ],
+      "returns": "Any"
+    },
+    {
+      "name": "sub",
+      "params": [
+        {
+          "name": "a",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "type": "int"
         }
       ],
       "returns": "Any"
     }
-  ]
+  ],
+  "imports": []
 }

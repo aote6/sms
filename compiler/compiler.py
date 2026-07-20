@@ -1,12 +1,9 @@
-"""SMS 编译器主入口"""
+"""SMS 编译器主入口（带 Profile，简洁输出）"""
 
 from compiler.frontend import ModuleParser
 from compiler.optimize.ir_builder import IRBuilderPass
 from compiler.artifact import IRArtifact
 from compiler.abi_builder import ABIBuilder
-from compiler.manifest import ManifestBuilder
-from compiler.hash import sha256
-from compiler.linker import ABIRepository, LinkProgram
 from compiler.passes import (
     PassPipeline,
     ValidatePass,
@@ -24,17 +21,21 @@ from compiler.analysis.frontier import DominanceFrontier
 from compiler.analysis.verify_cfg import CFGVerifier
 from compiler.analysis.callgraph import CallGraph
 from compiler.ssa import SSABuilder
+from compiler.profiler import CompilerProfiler
+from compiler.logging import normal, verbose, debug, LogLevel
 from pathlib import Path
+import time
 
 
 class Compiler:
-    def __init__(self, debug=False, output_dir="./build"):
+    def __init__(self, debug=False, output_dir="./build", profile=False):
         self.debug = debug
+        self.profile = profile
         self.frontend = ModuleParser()
         self.builder = IRBuilderPass(debug=debug)
         self.output_dir = Path(output_dir)
         self.abi_builder = ABIBuilder()
-        self.manifest_builder = ManifestBuilder()
+        self._profiler = CompilerProfiler() if profile else None
 
         self.pipeline = PassPipeline()
         self.pipeline.add(ValidatePass())
@@ -60,6 +61,9 @@ class Compiler:
         ]
 
     def compile(self, module) -> IRArtifact:
+        if self._profiler:
+            self._profiler.start_phase("Total")
+
         artifact = self.compile_to_ir(module)
 
         if "function_snapshot" in artifact.metadata and artifact.metadata["function_snapshot"]:
@@ -76,32 +80,47 @@ class Compiler:
         self.output_dir.mkdir(exist_ok=True)
         module_name = abi.module.lower()
 
-        # 保存 ABI
         abi_file = self.output_dir / f"{module_name}.abi.json"
         abi_file.write_text(abi.to_json(), encoding="utf-8")
         artifact.metadata["abi_file"] = str(abi_file)
 
-        # 保存 Python 代码
         py_file = self.output_dir / f"{module_name}.py"
         if "source" in artifact.metadata:
             py_file.write_text(artifact.metadata["source"], encoding="utf-8")
             artifact.metadata["py_file"] = str(py_file)
 
-        # 构建 Manifest
-        manifest = self.manifest_builder.build(artifact.module, [])
-        # 简化：直接保存
-        manifest_file = self.output_dir / f"{module_name}.manifest.json"
-        # 这里简化处理，实际应该传入 artifacts
-
-        print(f"📋 清单已保存: {manifest_file}")
+        if self._profiler:
+            self._profiler.end_phase()
+            # 更新统计
+            if artifact.module:
+                total_inst = sum(len(b.instructions) for f in artifact.module.functions for b in f.blocks)
+                total_blocks = sum(len(f.blocks) for f in artifact.module.functions)
+                self._profiler.update_stats(
+                    modules=1,
+                    functions=len(artifact.module.functions),
+                    basic_blocks=total_blocks,
+                    instructions=total_inst,
+                )
+            self._profiler.summary()
 
         return artifact
 
     def compile_to_ir(self, module) -> IRArtifact:
+        if self._profiler:
+            self._profiler.start_phase("Parse")
         artifact = self.frontend.parse(module)
+        if self._profiler:
+            self._profiler.end_phase()
+
+        if self._profiler:
+            self._profiler.start_phase("IR Build")
         artifact = self.builder.run(artifact)
+        if self._profiler:
+            self._profiler.end_phase()
 
         if artifact.module:
+            if self._profiler:
+                self._profiler.start_phase("Validate")
             snapshot = []
             for fn in artifact.module.functions:
                 snapshot.append({
@@ -110,12 +129,22 @@ class Compiler:
                     "returns": str(fn.returns) if fn.returns else "void",
                 })
             artifact.metadata["function_snapshot"] = snapshot
+            if self._profiler:
+                self._profiler.end_phase()
 
-            artifact.module = self.pipeline.run(artifact.module)
+            if self._profiler:
+                self._profiler.start_phase("Optimize")
+                artifact.module = self._run_pipeline_with_profile(artifact.module)
+                self._profiler.end_phase()
+            else:
+                artifact.module = self.pipeline.run(artifact.module)
+
             artifact.verified = True
             artifact.optimized = True
             artifact.metadata["passes"] = self.pass_names
 
+            if self._profiler:
+                self._profiler.start_phase("Analysis")
             callgraph = CallGraph()
             callgraph.build(artifact.module)
             artifact.metadata["callgraph"] = callgraph
@@ -140,26 +169,24 @@ class Compiler:
 
                 ssa = SSABuilder()
                 ssa.build(fn)
+            if self._profiler:
+                self._profiler.end_phase()
 
             artifact.ssa = True
 
         return artifact
 
-    def link(self, build_dir=None):
-        if build_dir is None:
-            build_dir = self.output_dir
-
-        repo = ABIRepository()
-        print()
-        print("🔗 扫描 ABI 文件...")
-        repo.scan(build_dir)
-        repo.summary()
-
-        program = LinkProgram()
-        for abi in repo.all():
-            program.add_module(abi)
-
-        success = program.link()
-        program.show()
-
-        return program
+    def _run_pipeline_with_profile(self, module):
+        current = module
+        for p in self.pipeline._passes:
+            start = time.perf_counter()
+            current = p.run(current)
+            duration = (time.perf_counter() - start) * 1000
+            if self._profiler:
+                self._profiler.record_pass(
+                    name=p.name,
+                    duration_ms=duration,
+                    before=0,
+                    after=0
+                )
+        return current

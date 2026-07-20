@@ -1,4 +1,8 @@
-"""BuildExecutor - 执行构建任务"""
+"""BuildExecutor - 执行构建任务（支持 CacheEntry）"""
+
+import time
+from build.cache_entry import CacheEntry
+from build.fingerprint import Fingerprint
 
 
 class BuildExecutor:
@@ -27,16 +31,23 @@ class BuildExecutor:
             self.results[node.name] = None
             return None
 
+        # 计算指纹
+        fp = Fingerprint.module(module)
+
+        # 检查缓存
         if self.cache:
-            from build.fingerprint import Fingerprint
-            fp = Fingerprint.module(module)
-            old = self.cache.get(module.name)
-            if old == fp:
+            entry = self.cache.get(module.name)
+            if entry and entry.fingerprint == fp:
                 print(f"  ⏭ {node.name} (缓存命中)")
                 node.built = True
                 node.dirty = False
-                self.results[node.name] = "cached"
-                return "cached"
+                self.results[node.name] = {
+                    "cached": True,
+                    "artifact": entry.artifact,
+                    "abi": entry.abi,
+                    "package": entry.package,
+                }
+                return self.results[node.name]
 
         print(f"  🔨 {module.name}")
 
@@ -45,22 +56,32 @@ class BuildExecutor:
             artifact = self.backend.emit(ir)
             package = self.packager.build(module.name, [artifact])
 
+            # 获取路径
+            artifact_path = artifact.path if hasattr(artifact, 'path') else str(artifact)
+            package_path = str(package) if package else None
+
+            # 保存到缓存
             if self.cache:
-                from build.fingerprint import Fingerprint
-                self.cache.put(module.name, Fingerprint.module(module))
+                entry = CacheEntry(
+                    module=module.name,
+                    fingerprint=fp,
+                    artifact=artifact_path,
+                    abi="",  # 暂未生成 ABI
+                    package=package_path,
+                    timestamp=time.time(),
+                )
+                self.cache.put(entry)
                 self.cache.save()
 
             node.built = True
             node.dirty = False
 
-            # 存储路径字符串，而不是对象
-            artifact_path = artifact.path if hasattr(artifact, 'path') else str(artifact)
-            package_path = str(package) if package else None
-
             result = {
+                "cached": False,
                 "ir": ir,
                 "artifact": artifact_path,
                 "package": package_path,
+                "fingerprint": fp,
             }
             self.results[node.name] = result
             return result

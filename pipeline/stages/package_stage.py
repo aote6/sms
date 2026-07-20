@@ -1,28 +1,24 @@
-"""PackageStage - 打包成 .smspkg"""
+"""PackageStage - 打包阶段"""
 
-from pipeline.stage import Stage
+from pipeline.stage_base import PipelineStage
 
 
-class PackageStage(Stage):
+class PackageStage(PipelineStage):
     name = "Package"
 
-    def run(self, context):
-        if context.skip_build:
-            print("  skip package")
-            return
-
-        session = context.session
-        packager = context.packager
-        artifacts = session.artifacts
+    def run(self, ctx):
+        print(f"▶ {self.name}")
+        packager = ctx.packager
+        artifacts = ctx.artifacts
 
         if packager and artifacts:
-            module_name = "Unknown"
-            if session.modules:
-                module_name = session.modules[0].name
-
-            package = packager.build(module_name, artifacts)
-            context.package = package
-            session.add_package(package)
-            print(f"  package {package}")
+            for artifact in artifacts:
+                # 从 artifact 获取模块名
+                module_name = getattr(artifact, 'module', 'unknown')
+                if hasattr(artifact, 'path'):
+                    module_name = artifact.path.split('/')[-1].replace('.py', '')
+                package = packager.build(module_name, [artifact])
+                ctx.add_package(package)
+            print(f"  ✅ {self.name} 完成: {len(artifacts)} 个包")
         else:
-            print("  (跳过)")
+            print(f"  ⏭ {self.name} 跳过")

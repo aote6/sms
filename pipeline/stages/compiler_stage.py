@@ -1,25 +1,22 @@
-"""CompilerStage - 编译模块"""
+"""CompilerStage - 编译阶段"""
 
-from pipeline.stage import Stage
+from pipeline.stage_base import PipelineStage
 
 
-class CompilerStage(Stage):
+class CompilerStage(PipelineStage):
     name = "Compiler"
 
-    def run(self, context):
-        if context.skip_build:
-            print("  skip compile")
-            return
+    def run(self, ctx):
+        print(f"▶ {self.name}")
+        compiler = ctx.compiler
+        modules = ctx.modules
 
-        session = context.session
-        compiler = context.compiler
-        module = context.module
-
-        if compiler and module:
-            ir = compiler.compile(module)
-            context.ir = ir
-            session.add_module(module)
-            session.add_ir(ir)
-            print(f"  compile {module.name}")
+        if compiler and modules:
+            compiled = 0
+            for module in modules:
+                ir = compiler.compile(module)
+                ctx.add_ir(ir)
+                compiled += 1
+            print(f"  ✅ {self.name} 完成: {compiled} 个模块")
         else:
-            print("  (跳过)")
+            print(f"  ⏭ {self.name} 跳过")

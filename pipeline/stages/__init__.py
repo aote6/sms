@@ -6,3 +6,4 @@ from .backend_stage import BackendStage
 from .build_session_stage import BuildSessionStage
 from .package_stage import PackageStage
 from .cache_stage import CacheStage
+from .runtime_stage import RuntimeStage

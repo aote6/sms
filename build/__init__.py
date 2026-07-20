@@ -2,6 +2,7 @@ from .node import BuildNode
 from .graph import BuildGraph
 from .scheduler import BuildScheduler
 from .cache import BuildCache
+from .cache_entry import CacheEntry
 from .fingerprint import Fingerprint
 from .executor import BuildExecutor
 from .driver import BuildDriver

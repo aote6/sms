@@ -1,31 +1,22 @@
-"""CacheStage - 缓存检查"""
+"""CacheStage - 缓存检查阶段"""
 
-from pipeline.stage import Stage
-from build.fingerprint import Fingerprint
+from pipeline.stage_base import PipelineStage
 
 
-class CacheStage(Stage):
+class CacheStage(PipelineStage):
     name = "Cache"
 
-    def run(self, context):
-        cache = context.cache
-        session = context.session
-        module = context.module
+    def run(self, ctx):
+        print(f"▶ {self.name}")
+        cache = ctx.cache
+        modules = ctx.modules
 
-        if not cache or not module:
-            context.skip_build = False
-            print("  (跳过缓存)")
-            return
-
-        fp = Fingerprint.module(module)
-        old = cache.get(module.name)
-
-        if old == fp:
-            session.cache_hits += 1
-            context.skip_build = True
-            print(f"  HIT  {module.name}")
+        if cache and modules:
+            hits = 0
+            for module in modules:
+                entry = cache.get(module.name)
+                if entry:
+                    hits += 1
+            print(f"  ✅ {self.name} 完成: {hits} 命中")
         else:
-            session.cache_misses += 1
-            context.skip_build = False
-            cache.put(module.name, fp)
-            print(f"  MISS {module.name}")
+            print(f"  ⏭ {self.name} 跳过")
