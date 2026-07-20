@@ -9,7 +9,9 @@ class IRFunction:
     returns: Any
     parameters: List[Any] = field(default_factory=list)
     blocks: List[IRBlock] = field(default_factory=list)
-    doc: str = ""  # 添加 doc 属性
+    doc: str = ""
+    dominator: Optional[Any] = None  # DominatorTree
+    frontier: Optional[Any] = None   # DominanceFrontier
 
     def entry(self):
         if not self.blocks:

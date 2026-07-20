@@ -1,7 +1,7 @@
 """控制流指令"""
 
 from dataclasses import dataclass
-from compiler.ssa import SSAValue
+from compiler.value import SSAValue
 
 
 @dataclass
@@ -16,12 +16,12 @@ class Jump:
 @dataclass
 class Branch:
     """条件分支"""
-    condition: str
+    condition: SSAValue
     true_block: str
     false_block: str
 
     def __str__(self):
-        return f"branch {self.condition} {self.true_block} {self.false_block}"
+        return f"branch {self.condition} -> {self.true_block} : {self.false_block}"
 
 
 @dataclass
@@ -39,7 +39,7 @@ class Compare:
 @dataclass
 class CallExtern:
     """外部函数调用: result = call module.function(args)"""
-    result: str
+    result: SSAValue
     module: str
     function: str
     args: list

@@ -2,6 +2,7 @@
 
 from .graph import Graph
 from compiler.instructions import Branch, Jump
+from compiler.ir.instruction import Return
 
 
 class ControlFlowGraph:
@@ -23,6 +24,10 @@ class ControlFlowGraph:
 
             elif isinstance(last, Jump):
                 graph.connect(block.name, last.target)
+
+            elif isinstance(last, Return):
+                # Return 是终止指令，没有后继
+                pass
 
             else:
                 if i + 1 < len(fn.blocks):

@@ -1,7 +1,7 @@
 """Python 后端 - Artifact → Python 源码"""
 
 from pathlib import Path
-from compiler.artifact import Artifact
+from compiler.artifact import IRArtifact
 from compiler.python_ast import PythonASTCompiler
 
 
@@ -11,16 +11,15 @@ class PythonBackend:
         self.output_dir.mkdir(exist_ok=True)
         self.ast_compiler = PythonASTCompiler()
 
-    def emit(self, artifact: Artifact) -> Artifact:
+    def emit(self, artifact: IRArtifact) -> IRArtifact:
         """从 Artifact 生成 Python 源码"""
-        if artifact.ir is None:
-            raise ValueError(f"Artifact {artifact.name} 没有 IR")
+        if artifact.module is None:
+            raise ValueError(f"Artifact {artifact.metadata.get('original_module', 'unknown')} 没有 IR")
 
-        source = self.ast_compiler.emit(artifact.ir)
-        artifact.source = source
+        source = self.ast_compiler.emit(artifact.module)
+        artifact.metadata["source"] = source
 
-        # 写入文件
-        filename = self.output_dir / f"{artifact.name.lower().replace(' ', '_')}.py"
+        filename = self.output_dir / f"{artifact.module.name.lower().replace(' ', '_')}.py"
         filename.write_text(source, encoding="utf-8")
 
         artifact.metadata["output_file"] = str(filename)

@@ -4,30 +4,29 @@ from compiler.ir.instruction import (
     Load, Store, BinaryOp, Return, Call, Const
 )
 from compiler.instructions import Branch, Jump, Compare
+from compiler.ssa_core import SSAValue
 
 
 class IRVerifier:
     def verify_function(self, fn):
-        """验证单个函数"""
         defined = set()
 
         for block in fn.blocks:
             for inst in block.instructions:
-                # 处理控制流指令
                 if isinstance(inst, Compare):
                     defined.add(inst.result)
-                    if inst.left not in defined:
+                    if not self._is_defined(inst.left, defined):
                         raise ValueError(
                             f"{fn.name}: undefined value '{inst.left}' in compare in block '{block.name}'"
                         )
-                    if inst.right not in defined:
+                    if not self._is_defined(inst.right, defined):
                         raise ValueError(
                             f"{fn.name}: undefined value '{inst.right}' in compare in block '{block.name}'"
                         )
                     continue
 
                 elif isinstance(inst, Branch):
-                    if inst.condition not in defined:
+                    if not self._is_defined(inst.condition, defined):
                         raise ValueError(
                             f"{fn.name}: undefined condition '{inst.condition}' in branch"
                         )
@@ -36,29 +35,28 @@ class IRVerifier:
                 elif isinstance(inst, Jump):
                     continue
 
-                # 原有指令验证
                 if isinstance(inst, Load):
                     defined.add(inst.result)
 
                 elif isinstance(inst, BinaryOp):
-                    if inst.left not in defined:
+                    if not self._is_defined(inst.left, defined):
                         raise ValueError(
                             f"{fn.name}: undefined value '{inst.left}' in block '{block.name}'"
                         )
-                    if inst.right not in defined:
+                    if not self._is_defined(inst.right, defined):
                         raise ValueError(
                             f"{fn.name}: undefined value '{inst.right}' in block '{block.name}'"
                         )
                     defined.add(inst.result)
 
                 elif isinstance(inst, Store):
-                    if inst.value not in defined:
+                    if not self._is_defined(inst.value, defined):
                         raise ValueError(
                             f"{fn.name}: undefined value '{inst.value}' in store"
                         )
 
                 elif isinstance(inst, Return):
-                    if inst.value is not None and inst.value not in defined:
+                    if inst.value is not None and not self._is_defined(inst.value, defined):
                         raise ValueError(
                             f"{fn.name}: undefined value '{inst.value}' in return"
                         )
@@ -70,6 +68,15 @@ class IRVerifier:
                     defined.add(inst.result)
 
         return True
+
+    def _is_defined(self, value, defined):
+        if value is None:
+            return True
+        if isinstance(value, SSAValue):
+            return value in defined
+        if isinstance(value, str):
+            return value in defined
+        return False
 
     def verify_module(self, module):
         for fn in module.functions:

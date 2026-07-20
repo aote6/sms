@@ -2,7 +2,7 @@
 
 from .instruction import Store, Load, Return, BinaryOp, Call, Const
 from compiler.instructions import Branch, Jump, Compare
-from compiler.ssa import SSAValue
+from compiler.ssa_core import SSAValue
 
 
 class IRPrinter:

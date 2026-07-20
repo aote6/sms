@@ -1,82 +1,118 @@
-"""Dominator Tree 构建 (迭代算法)"""
+"""Dominator Tree - 支配树构建"""
+
+from compiler.analysis.cfg import ControlFlowGraph
 
 
 class DominatorTree:
-    def build(self, graph, start):
-        """构建支配树，返回 dom dict: node -> set(dominators)"""
-        nodes = list(graph.nodes)
+    def __init__(self, function):
+        self.function = function
+        self.cfg = ControlFlowGraph().build(function)
+        self.dom = {}  # block_name -> set(block_names)
+        self.idom = {}  # block_name -> block_name or None
 
-        # 初始化: 所有节点支配所有节点
-        dom = {}
-        for n in nodes:
-            dom[n] = set(nodes)
+    def build(self):
+        blocks = self.function.blocks
+        entry = self.function.entry()
+        entry_name = entry.name
 
-        # start 只支配自己
-        dom[start] = {start}
+        # 初始化：entry 只支配自己，其他支配所有
+        block_names = [b.name for b in blocks]
+        for b in blocks:
+            if b == entry:
+                self.dom[b.name] = {b.name}
+            else:
+                self.dom[b.name] = set(block_names)
 
         changed = True
         while changed:
             changed = False
-            for n in nodes:
-                if n == start:
+
+            for block in blocks:
+                if block == entry:
                     continue
 
-                preds = graph.predecessors(n)
+                preds = self.cfg.predecessors(block.name)
                 if not preds:
                     continue
 
-                # 交集: 所有前驱支配集的交集
-                new = set(dom[preds[0]])
-                for p in preds[1:]:
-                    new &= dom[p]
+                # 交集：所有前驱支配集的交集
+                pred_doms = [self.dom[p] for p in preds if p in self.dom]
+                if not pred_doms:
+                    continue
 
-                # 加上自己
-                new.add(n)
+                new = set(pred_doms[0])
+                for d in pred_doms[1:]:
+                    new &= d
 
-                if new != dom[n]:
-                    dom[n] = new
+                new.add(block.name)
+
+                if new != self.dom[block.name]:
+                    self.dom[block.name] = new
                     changed = True
 
-        return dom
+        self._compute_idom()
+        return self
 
-    def build_immediate(self, graph, start):
-        """构建 immediate dominator (IDom)"""
-        dom = self.build(graph, start)
+    def _compute_idom(self):
+        """计算立即支配者 (IDom)"""
+        entry = self.function.entry()
+        entry_name = entry.name
 
-        # 计算 IDom: 支配者中除了自己，被支配最多的那个
-        idom = {}
-        for n in dom:
-            if n == start:
-                idom[n] = None
+        for block in self.function.blocks:
+            block_name = block.name
+            if block == entry:
+                self.idom[block_name] = None
                 continue
 
-            dominators = dom[n] - {n}
-            if not dominators:
-                idom[n] = None
+            candidates = self.dom[block_name] - {block_name}
+            if not candidates:
+                self.idom[block_name] = None
                 continue
 
-            # 找最近支配者: 支配关系最深的那层
-            # 简单实现: 找支配者中，其支配集最大的
-            max_dom = None
-            max_size = -1
-            for d in dominators:
-                if len(dom[d]) > max_size:
-                    max_size = len(dom[d])
-                    max_dom = d
-            idom[n] = max_dom
+            # 找到最近支配者：在 candidates 中，不被其他 candidate 支配的
+            parent = None
+            for d in candidates:
+                ok = True
+                for other in candidates:
+                    if other == d:
+                        continue
+                    if d in self.dom.get(other, set()):
+                        ok = False
+                        break
+                if ok:
+                    parent = d
+                    break
 
-        return idom
+            self.idom[block_name] = parent
 
-    def build_tree(self, graph, start):
-        """构建支配树 (children dict)"""
-        idom = self.build_immediate(graph, start)
+    def dominates(self, a: str, b: str) -> bool:
+        """检查 a 是否支配 b"""
+        if a not in self.dom:
+            return False
+        return a in self.dom.get(b, set())
 
-        tree = {}
-        for n in graph.nodes:
-            tree[n] = set()
+    def get_dominators(self, block_name: str) -> set:
+        """获取 block 的所有支配者"""
+        return self.dom.get(block_name, set())
 
-        for n, parent in idom.items():
-            if parent is not None and n != start:
-                tree[parent].add(n)
+    def get_idom(self, block_name: str):
+        """获取 block 的立即支配者"""
+        return self.idom.get(block_name)
 
-        return tree
+    def get_block_by_name(self, name: str):
+        for b in self.function.blocks:
+            if b.name == name:
+                return b
+        return None
+
+    def print_tree(self):
+        """打印支配树"""
+        print()
+        print("=" * 50)
+        print("Dominator Tree")
+        print("=" * 50)
+        for block in self.function.blocks:
+            idom_name = self.idom.get(block.name)
+            dom_names = sorted(self.dom.get(block.name, set()))
+            print(f"  {block.name:10} idom={str(idom_name):10} dom={dom_names}")
+        print("=" * 50)

@@ -14,7 +14,7 @@ from .module import IRModule
 from .value import IRValue, Constant, Variable, Binary, Unary
 from .builder import IRBuilder
 from .printer import IRPrinter
-from compiler.ssa import SSAValue, SSAValueGenerator
+from compiler.ssa_core import SSAValue, SSAValueGenerator
 from compiler.symbol import IRImport
 from compiler.instructions import Branch, Jump, Compare, CallExtern
 

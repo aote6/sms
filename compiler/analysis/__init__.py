@@ -4,3 +4,6 @@ from .traversal import Traversal
 from .dominator import DominatorTree
 from .printer import AnalysisPrinter
 from .verifier import IRVerifier
+from .verify_cfg import CFGVerifier
+from .frontier import DominanceFrontier
+from .callgraph import CallGraph

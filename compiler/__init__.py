@@ -1,2 +1,2 @@
 from .compiler import Compiler
-from .artifact import Artifact
+from .artifact import IRArtifact

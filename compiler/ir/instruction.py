@@ -1,8 +1,8 @@
-"""IR 指令 - 使用 SSA 值"""
+"""IR 指令 - 使用 SSAValue"""
 
 from dataclasses import dataclass
 from typing import List, Any, Optional
-from compiler.ssa import SSAValue
+from compiler.value import SSAValue
 
 
 class IRInstruction:

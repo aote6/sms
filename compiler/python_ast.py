@@ -8,7 +8,7 @@ import ast
 from compiler.ir import IRModule, IRFunction, IRBlock
 from compiler.ir.instruction import Load, Store, Return, BinaryOp, Call, Const
 from compiler.instructions import Branch, Jump, Compare
-from compiler.ssa import SSAValue
+from compiler.ssa_core import SSAValue
 
 
 class PythonASTCompiler:
