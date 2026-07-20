@@ -1,10 +1,11 @@
-from .instruction import Store, Load, Return, BinaryOp, Call, Branch, Jump, Const
-from .value import Constant, Variable, Binary, Unary
+"""IR 打印器 - 支持 SSA 值"""
+
+from .instruction import Store, Load, Return, BinaryOp, Call, Const
+from compiler.instructions import Branch, Jump, Compare
+from compiler.ssa import SSAValue
 
 
 class IRPrinter:
-    """IR 打印器 - 用于调试"""
-
     def print_module(self, module):
         print()
         print("=" * 60)
@@ -17,11 +18,8 @@ class IRPrinter:
 
     def print_function(self, fn):
         print()
-        print(f"function {fn.name}(")
-        if fn.parameters:
-            for p in fn.parameters:
-                print(f"    {p},")
-        print(")")
+        param_str = ", ".join([p.name for p in fn.parameters])
+        print(f"function {fn.name}({param_str})")
 
         for block in fn.blocks:
             self.print_block(block)
@@ -32,36 +30,32 @@ class IRPrinter:
         for inst in block.instructions:
             print(f"    {self.inst_repr(inst)}")
 
+    def _value_repr(self, value):
+        if value is None:
+            return "None"
+        if isinstance(value, SSAValue):
+            return str(value)
+        return str(value)
+
     def inst_repr(self, inst):
-        if isinstance(inst, Store):
-            return f"store {inst.value} -> {inst.target}"
-        elif isinstance(inst, Load):
-            return f"load {inst.name}"
+        if isinstance(inst, Load):
+            return f"{self._value_repr(inst.result)} = load {inst.source}"
+        elif isinstance(inst, Store):
+            return f"store {self._value_repr(inst.value)} -> {inst.target}"
         elif isinstance(inst, Return):
-            return f"return {self.value_repr(inst.value)}"
+            return f"return {self._value_repr(inst.value)}"
         elif isinstance(inst, BinaryOp):
-            return f"{inst.target} = {self.value_repr(inst.left)} {inst.op} {self.value_repr(inst.right)}"
+            return f"{self._value_repr(inst.result)} = {inst.op} {self._value_repr(inst.left)}, {self._value_repr(inst.right)}"
         elif isinstance(inst, Call):
-            return f"{inst.target} = call {inst.args}"
+            args = ", ".join([self._value_repr(a) for a in inst.args])
+            return f"{self._value_repr(inst.result)} = call {inst.fn_name}({args})"
         elif isinstance(inst, Branch):
-            return f"branch {inst.condition} -> {inst.true_block} : {inst.false_block}"
+            return f"branch {self._value_repr(inst.condition)} -> {inst.true_block} : {inst.false_block}"
         elif isinstance(inst, Jump):
             return f"jump {inst.target}"
         elif isinstance(inst, Const):
-            return f"const {inst.value}"
+            return f"{self._value_repr(inst.result)} = const {inst.value}"
+        elif isinstance(inst, Compare):
+            return f"{self._value_repr(inst.result)} = cmp {self._value_repr(inst.left)} {inst.op} {self._value_repr(inst.right)}"
         else:
             return repr(inst)
-
-    def value_repr(self, value):
-        if value is None:
-            return "None"
-        elif isinstance(value, Constant):
-            return repr(value.value)
-        elif isinstance(value, Variable):
-            return value.name
-        elif isinstance(value, Binary):
-            return f"({self.value_repr(value.left)} {value.op} {self.value_repr(value.right)})"
-        elif isinstance(value, Unary):
-            return f"({value.op} {self.value_repr(value.operand)})"
-        else:
-            return repr(value)

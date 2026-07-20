@@ -9,6 +9,7 @@ class IRFunction:
     returns: Any
     parameters: List[Any] = field(default_factory=list)
     blocks: List[IRBlock] = field(default_factory=list)
+    doc: str = ""  # 添加 doc 属性
 
     def entry(self):
         if not self.blocks:

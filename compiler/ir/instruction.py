@@ -1,5 +1,8 @@
+"""IR 指令 - 使用 SSA 值"""
+
 from dataclasses import dataclass
 from typing import List, Any, Optional
+from compiler.ssa import SSAValue
 
 
 class IRInstruction:
@@ -8,36 +11,40 @@ class IRInstruction:
 
 
 @dataclass
-class Assign(IRInstruction):
-    """变量赋值"""
-    target: str
-    value: Any
+class Load(IRInstruction):
+    """加载变量: result = load name"""
+    result: SSAValue
+    source: str
 
 
 @dataclass
 class Store(IRInstruction):
-    """存储变量"""
+    """存储变量: store value -> target"""
     target: str
-    value: Any
+    value: SSAValue
 
 
 @dataclass
-class Load(IRInstruction):
-    """加载变量"""
-    name: str
+class BinaryOp(IRInstruction):
+    """二元运算: result = op left, right"""
+    result: SSAValue
+    op: str
+    left: SSAValue
+    right: SSAValue
 
 
 @dataclass
 class Return(IRInstruction):
     """返回值"""
-    value: Optional[Any] = None
+    value: Optional[SSAValue] = None
 
 
 @dataclass
 class Call(IRInstruction):
-    """函数调用"""
-    target: str
-    args: List[Any] = None
+    """函数调用: result = call fn_name(args)"""
+    result: SSAValue
+    fn_name: str
+    args: List[SSAValue] = None
 
     def __post_init__(self):
         if self.args is None:
@@ -45,29 +52,14 @@ class Call(IRInstruction):
 
 
 @dataclass
-class Branch(IRInstruction):
-    """条件分支"""
-    condition: Any
-    true_block: str
-    false_block: str
-
-
-@dataclass
-class Jump(IRInstruction):
-    """无条件跳转"""
-    target: str
-
-
-@dataclass
 class Const(IRInstruction):
-    """常量指令"""
+    """常量: result = const value"""
+    result: SSAValue
     value: Any
 
 
 @dataclass
-class BinaryOp(IRInstruction):
-    """二元运算指令"""
-    target: str
-    op: str
-    left: Any
-    right: Any
+class Parameter:
+    """函数参数"""
+    name: str
+    type: Any = None

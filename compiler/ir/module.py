@@ -10,6 +10,7 @@ class IRModule:
     functions: List[IRFunction] = field(default_factory=list)
     runtime: str = "python"
     metadata: dict = field(default_factory=dict)
+    imports: List[Any] = field(default_factory=list)  # IRImport 列表
 
     def add_function(self, fn: IRFunction):
         self.functions.append(fn)
@@ -20,5 +21,8 @@ class IRModule:
                 return fn
         return None
 
+    def add_import(self, imp):
+        self.imports.append(imp)
+
     def __repr__(self):
-        return f"IRModule(name='{name}', functions={len(self.functions)})"
+        return f"IRModule(name='{self.name}', functions={len(self.functions)}, imports={len(self.imports)})"

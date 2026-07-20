@@ -1,57 +1,93 @@
-from .instruction import Store, Load, Return, BinaryOp, Call, Branch, Jump
+"""IR 构建器 - 使用 SSA 值 + 控制流 + 外部调用"""
+
+from .instruction import Store, Load, Return, BinaryOp, Call, Const
 from .value import Constant, Variable, Binary, Unary
+from compiler.ssa import SSAValueGenerator
+from compiler.instructions import Compare, Branch, Jump, CallExtern
 
 
 class IRBuilder:
-    """IR 构建器 - 所有 IR 生成必须通过此接口"""
-
     def __init__(self, block):
         self.block = block
         self._current_block = block
+        self._gen = SSAValueGenerator()
 
     def set_block(self, block):
         self._current_block = block
         self.block = block
+        self._gen.reset()
+
+    def load(self, name: str):
+        result = self._gen.next()
+        self._current_block.append(Load(result, name))
+        return result
 
     def store(self, target: str, value):
         self._current_block.append(Store(target, value))
 
-    def load(self, name: str):
-        self._current_block.append(Load(name))
+    def add(self, left, right):
+        result = self._gen.next()
+        self._current_block.append(BinaryOp(result, "+", left, right))
+        return result
+
+    def sub(self, left, right):
+        result = self._gen.next()
+        self._current_block.append(BinaryOp(result, "-", left, right))
+        return result
+
+    def mul(self, left, right):
+        result = self._gen.next()
+        self._current_block.append(BinaryOp(result, "*", left, right))
+        return result
+
+    def div(self, left, right):
+        result = self._gen.next()
+        self._current_block.append(BinaryOp(result, "/", left, right))
+        return result
 
     def ret(self, value=None):
         self._current_block.append(Return(value))
 
-    def add(self, target: str, left, right):
-        self._current_block.append(BinaryOp(target, "+", left, right))
-
-    def sub(self, target: str, left, right):
-        self._current_block.append(BinaryOp(target, "-", left, right))
-
-    def mul(self, target: str, left, right):
-        self._current_block.append(BinaryOp(target, "*", left, right))
-
-    def div(self, target: str, left, right):
-        self._current_block.append(BinaryOp(target, "/", left, right))
-
-    def call(self, target: str, fn_name: str, args=None):
+    def call(self, fn_name: str, args=None):
         if args is None:
             args = []
-        self._current_block.append(Call(target, args))
+        result = self._gen.next()
+        self._current_block.append(Call(result, fn_name, args))
+        return result
 
-    def branch(self, cond, true_block: str, false_block: str):
-        """条件分支"""
-        self._current_block.append(Branch(cond, true_block, false_block))
+    def call_extern(self, module: str, function: str, *args):
+        """调用外部模块的函数"""
+        result = self._gen.next()
+        self._current_block.append(CallExtern(
+            result=result,
+            module=module,
+            function=function,
+            args=list(args)
+        ))
+        return result
 
-    def jump(self, target: str):
-        """无条件跳转"""
-        self._current_block.append(Jump(target))
+    def branch(self, cond, true_block, false_block):
+        self._current_block.append(Branch(cond, true_block.name, false_block.name))
+
+    def jump(self, target):
+        self._current_block.append(Jump(target.name))
 
     def const(self, value):
-        return Constant(value)
+        result = self._gen.next()
+        self._current_block.append(Const(result, value))
+        return result
 
-    def var(self, name: str):
-        return Variable(name)
+    def cmp_gt(self, a, b):
+        result = self._gen.next()
+        self._current_block.append(Compare(">", a, b, result))
+        return result
 
-    def binary(self, op: str, left, right):
-        return Binary(op, left, right)
+    def cmp_lt(self, a, b):
+        result = self._gen.next()
+        self._current_block.append(Compare("<", a, b, result))
+        return result
+
+    def cmp_eq(self, a, b):
+        result = self._gen.next()
+        self._current_block.append(Compare("==", a, b, result))
+        return result

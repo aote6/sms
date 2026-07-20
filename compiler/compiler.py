@@ -1,47 +1,57 @@
-"""IR Compiler with Pass Pipeline
-Module → IRModule → PassPipeline → IRModule
-"""
+"""SMS 编译器主入口"""
 
-from compiler.ir import (
-    IRModule, IRFunction, IRBlock,
-    IRBuilder, IRPrinter,
-    Constant, Variable,
-)
-from compiler.passes import PassPipeline, ValidatePass, ConstantFoldPass, DeadCodePass
+from compiler.frontend import ModuleParser
+from compiler.optimize.ir_builder import IRBuilderPass
+from compiler.backend.python_backend import PythonBackend
+from compiler.artifact import Artifact
+from compiler.linker import Linker
+from compiler.symbol import IRImport
 
 
-class IRCompiler:
+class Compiler:
     def __init__(self, debug=False):
-        self.pipeline = PassPipeline()
-        self.pipeline.add(ValidatePass())
-        self.pipeline.add(ConstantFoldPass())
-        self.pipeline.add(DeadCodePass())
         self.debug = debug
+        self.frontend = ModuleParser()
+        self.middle = IRBuilderPass(debug=debug)
+        self.backend = PythonBackend()
+        self.linker = Linker()
 
-    def compile(self, module) -> IRModule:
-        ir = IRModule(
-            name=module.name,
-            version=module.version,
-            runtime=module.contract.runtime if module.contract else "python"
-        )
+    def compile(self, module) -> Artifact:
+        artifact = self.frontend.parse(module)
+        artifact = self.middle.run(artifact)
+        artifact = self.backend.emit(artifact)
+        return artifact
 
-        for cap in module.capabilities:
-            fn = IRFunction(
-                name=cap.name,
-                returns="Any",
-            )
+    def compile_to_ir(self, module) -> Artifact:
+        artifact = self.frontend.parse(module)
+        artifact = self.middle.run(artifact)
+        return artifact
 
-            entry = fn.entry()
-            builder = IRBuilder(entry)
+    def compile_and_link(self, modules):
+        """编译多个模块并链接"""
+        artifacts = []
+        for m in modules:
+            artifact = self.compile_to_ir(m)
+            artifacts.append(artifact)
 
-            # 使用 builder 生成代码
-            # 简单返回 None
-            builder.ret(Constant(None))
+        # 收集所有 IR
+        ir_modules = [a.ir for a in artifacts if a.ir is not None]
 
-            ir.add_function(fn)
+        # 链接
+        program = self.linker.link(ir_modules)
 
-        if self.debug:
-            printer = IRPrinter()
-            printer.print_module(ir)
+        # 检查链接状态
+        if not program.is_linked():
+            print(f"❌ 链接失败，未定义: {program.undefined}")
+            return None
 
-        return self.pipeline.run(ir)
+        print(f"✅ 链接成功: {len(program.modules)} 模块, {len(program.exports)} 导出")
+
+        # 使用第一个模块的 backend 生成代码（简化）
+        if artifacts:
+            artifact = artifacts[0]
+            artifact.metadata["linked"] = True
+            artifact.metadata["modules"] = list(program.modules.keys())
+            return artifact
+
+        return None

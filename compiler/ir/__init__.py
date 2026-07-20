@@ -1,37 +1,33 @@
 from .block import IRBlock
 from .instruction import (
     IRInstruction,
-    Assign,
-    Store,
     Load,
+    Store,
     Return,
-    Call,
-    Branch,
-    Jump,
-    Const,
     BinaryOp,
+    Call,
+    Const,
+    Parameter,
 )
 from .function import IRFunction
 from .module import IRModule
 from .value import IRValue, Constant, Variable, Binary, Unary
 from .builder import IRBuilder
 from .printer import IRPrinter
-
-# 从旧 ir_old 导入（兼容）
-from compiler.ir_old import IRCapability, IRContract
+from compiler.ssa import SSAValue, SSAValueGenerator
+from compiler.symbol import IRImport
+from compiler.instructions import Branch, Jump, Compare, CallExtern
 
 __all__ = [
     "IRBlock",
     "IRInstruction",
-    "Assign",
-    "Store",
     "Load",
+    "Store",
     "Return",
-    "Call",
-    "Branch",
-    "Jump",
-    "Const",
     "BinaryOp",
+    "Call",
+    "Const",
+    "Parameter",
     "IRFunction",
     "IRModule",
     "IRValue",
@@ -41,6 +37,11 @@ __all__ = [
     "Unary",
     "IRBuilder",
     "IRPrinter",
-    "IRCapability",
-    "IRContract",
+    "SSAValue",
+    "SSAValueGenerator",
+    "IRImport",
+    "Branch",
+    "Jump",
+    "Compare",
+    "CallExtern",
 ]
