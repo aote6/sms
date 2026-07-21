@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 
 @dataclass
@@ -13,3 +13,4 @@ class Concept:
     outputs: List[str] = field(default_factory=list)
     parent: Optional[str] = None
     children: List[str] = field(default_factory=list)
+    metadata: Dict[str, Any] = field(default_factory=dict)

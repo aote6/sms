@@ -1,71 +1,93 @@
 """
-Agent 能力标准词汇表
-SMS Concept Registry 初始化数据
+Agent 能力标准词汇表（含行为模板）
 """
-
 from concept import ConceptRegistry, Concept
 
 def init_agent_concepts(reg: ConceptRegistry):
-    """向 ConceptRegistry 注册 Agent 领域的标准能力词汇"""
-
+    """注册 Agent 领域标准能力词汇"""
     concepts = [
-        # Tool 工具
-        Concept("cap.agent.tool", "Tool", "Agent 可调用的外部工具",
-                ["tool", "agent_tool", "function_call", "tool_call", "工具"],
-                ["parameters"], ["result"]),
-        Concept("cap.agent.tool.search", "ToolSearch", "搜索工具",
-                ["search", "web_search", "检索", "搜索"],
-                ["query"], ["results"], parent="cap.agent.tool"),
-        Concept("cap.agent.tool.file", "ToolFile", "文件操作工具",
-                ["file_operation", "read_file", "write_file", "文件操作"],
-                ["path", "operation"], ["data"], parent="cap.agent.tool"),
-        Concept("cap.agent.tool.code", "ToolCode", "代码执行工具",
-                ["code_execution", "run_code", "代码执行"],
-                ["code", "language"], ["output"], parent="cap.agent.tool"),
-
-        # Memory 记忆
-        Concept("cap.agent.memory", "Memory", "Agent 的记忆存储能力",
-                ["memory", "agent_memory", "context", "state", "记忆"],
-                ["key", "value"], ["data"]),
-        Concept("cap.agent.memory.short_term", "ShortTermMemory", "短期记忆",
-                ["short_memory", "working_memory", "短期记忆"],
-                ["context"], ["memory_state"], parent="cap.agent.memory"),
-        Concept("cap.agent.memory.long_term", "LongTermMemory", "长期记忆",
-                ["long_memory", "persistent_memory", "长期记忆"],
-                ["data"], ["stored_data"], parent="cap.agent.memory"),
-
-        # Planner 规划
-        Concept("cap.agent.planner", "Planner", "Agent 的任务规划与推理",
-                ["planner", "planning", "reasoning", "规划"],
-                ["goal", "context"], ["plan"]),
-        Concept("cap.agent.planner.sequential", "SequentialPlanner", "顺序规划器",
-                ["sequential", "step_by_step", "顺序规划"],
-                ["task"], ["steps"], parent="cap.agent.planner"),
-        Concept("cap.agent.planner.react", "ReActPlanner", "ReAct 模式",
-                ["react", "reasoning_action", "思考行动"],
-                ["observation"], ["action"], parent="cap.agent.planner"),
-
-        # Executor 执行
-        Concept("cap.agent.executor", "Executor", "Agent 的行动执行",
-                ["executor", "execute", "action", "执行"],
-                ["action_plan"], ["result"]),
-        Concept("cap.agent.executor.tool_invoker", "ToolInvoker", "工具调用执行器",
-                ["invoke_tool", "call_tool", "工具调用"],
-                ["tool_name", "parameters"], ["tool_result"], parent="cap.agent.executor"),
-
-        # Protocol 通信
-        Concept("cap.agent.protocol", "AgentProtocol", "Agent 间通信协议",
-                ["protocol", "communication", "message", "通信协议", "协议"],
-                ["message"], ["response"]),
-        Concept("cap.agent.protocol.request", "RequestProtocol", "请求-响应模式",
-                ["request", "ask", "请求"],
-                ["request_data"], ["response_data"], parent="cap.agent.protocol"),
-        Concept("cap.agent.protocol.debate", "DebateProtocol", "多 Agent 辩论协议",
-                ["debate", "discuss", "辩论"],
-                ["proposal"], ["consensus"], parent="cap.agent.protocol"),
+        Concept(
+            concept_id="cap.agent.tool.code",
+            name="ToolCode",
+            aliases=['code_execution', 'run_code', '代码执行', 'tool_code', 'toolcode'],
+            description="执行代码并返回结果",
+            inputs=['code: str', 'language: str'],
+            outputs=['output: str'],
+            metadata={'behavior': 'code_executor', 'template': 'exec', 'sandbox': True, 'timeout': 30},
+        ),
+        Concept(
+            concept_id="cap.agent.tool.file",
+            name="ToolFile",
+            aliases=['file_operation', 'read_file', 'write_file', '文件操作', 'tool_file', 'toolfile'],
+            description="读写文件系统",
+            inputs=['path: str', 'operation: str'],
+            outputs=['data: str'],
+            metadata={'behavior': 'file_operator', 'template': 'file_io'},
+        ),
+        Concept(
+            concept_id="cap.agent.memory.short_term",
+            name="ShortTermMemory",
+            aliases=['short_memory', 'working_memory', '短期记忆', 'short_term_memory', 'shorttermmemory'],
+            description="短期记忆",
+            inputs=['key: str', 'value: Any'],
+            outputs=['data: Any'],
+            metadata={'behavior': 'dict_store', 'template': 'memory', 'max_size': 100},
+        ),
+        Concept(
+            concept_id="cap.agent.memory.long_term",
+            name="LongTermMemory",
+            aliases=['long_memory', 'persistent_memory', '长期记忆', 'long_term_memory', 'longtermmemory'],
+            description="长期记忆",
+            inputs=['data: Any'],
+            outputs=['stored_id: str'],
+            metadata={'behavior': 'file_store', 'template': 'persistent_memory'},
+        ),
+        Concept(
+            concept_id="cap.agent.planner.sequential",
+            name="SequentialPlanner",
+            aliases=['sequential', 'step_by_step', '顺序规划', 'sequential_planner', 'sequentialplanner'],
+            description="任务分解",
+            inputs=['task: str'],
+            outputs=['steps: list'],
+            metadata={'behavior': 'llm_planner', 'template': 'sequential_plan', 'prompt': '将以下任务分解为有序步骤:'},
+        ),
+        Concept(
+            concept_id="cap.agent.planner.react",
+            name="ReActPlanner",
+            aliases=['react', 'reasoning_action', '思考行动', 'react_planner', 'reactplanner'],
+            description="Think-Act-Observe",
+            inputs=['observation: str'],
+            outputs=['action: str'],
+            metadata={'behavior': 'llm_react', 'template': 'react_loop', 'max_iterations': 5},
+        ),
+        Concept(
+            concept_id="cap.agent.executor.tool_invoker",
+            name="ToolInvoker",
+            aliases=['invoke_tool', 'call_tool', '工具调用', 'tool_invoker', 'toolinvoker'],
+            description="动态调用工具",
+            inputs=['tool_name: str', 'parameters: dict'],
+            outputs=['result: Any'],
+            metadata={'behavior': 'dispatcher', 'template': 'tool_dispatch'},
+        ),
+        Concept(
+            concept_id="cap.agent.protocol.request",
+            name="RequestProtocol",
+            aliases=['request', 'ask', '请求', 'request_protocol', 'requestprotocol'],
+            description="请求-响应通信",
+            inputs=['message: str'],
+            outputs=['response: str'],
+            metadata={'behavior': 'message_pass', 'template': 'request_response'},
+        ),
+        Concept(
+            concept_id="cap.agent.protocol.debate",
+            name="DebateProtocol",
+            aliases=['debate', 'discuss', '辩论', 'debate_protocol', 'debateprotocol'],
+            description="多 Agent 辩论",
+            inputs=['proposal: str'],
+            outputs=['consensus: str'],
+            metadata={'behavior': 'llm_debate', 'template': 'debate', 'rounds': 3},
+        ),
     ]
-
     for c in concepts:
         reg.register(c)
-
     return reg
