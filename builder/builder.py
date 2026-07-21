@@ -4,7 +4,6 @@ from module import Module
 from ir.compiler import IRCompiler
 from ir.ir import IRModule, IRFunction
 from backend.python_backend import PythonBackend
-from .param_checker import check_params
 
 
 class Builder:
@@ -28,6 +27,20 @@ class Builder:
         parts = [p.strip() for p in input_type.split(",") if p.strip()]
         return len(parts)
 
+    def _parse_expected_types(self, input_type: str) -> dict:
+        """解析 input_type 字符串为 {参数名: 期望类型}"""
+        result = {}
+        if not input_type or input_type in ("none", "any", ""):
+            return result
+        for part in input_type.split(","):
+            part = part.strip()
+            if ":" in part:
+                name, typ = part.split(":", 1)
+                result[name.strip()] = typ.strip()
+            else:
+                result[part] = "Any"
+        return result
+
     def _gen_test_args(self, count: int) -> str:
         if count == 0:
             return ""
@@ -41,7 +54,7 @@ class Builder:
     def _merge_ir(self, product_name: str, ir_modules: List[IRModule], main_module: Module) -> IRModule:
         merged = IRModule(
             name=product_name, version="1.0.0", runtime="python",
-            imports=["from typing import Any", "import inspect"],
+            imports=["from typing import Any, get_type_hints", "import inspect"],
             metadata={"product": product_name, "modules": [ir.name for ir in ir_modules]}
         )
 
@@ -54,19 +67,34 @@ class Builder:
                 fn_params[new_name] = fn.inputs[0] if fn.inputs else ""
                 merged.functions.append(fn)
 
-        # 生成 validate 方法 —— 运行时自检
+        # 生成 validate 方法 —— 参数个数 + 类型检查
         validate_body = [
             "print(\"🔍 运行时自检...\")",
             "errors = []",
         ]
         for fn_name, input_type in fn_params.items():
-            expected = self._count_params(input_type)
+            expected_count = self._count_params(input_type)
+            expected_types = self._parse_expected_types(input_type)
+            
+            # 参数个数检查
             validate_body.append(f"sig = inspect.signature(self.{fn_name})")
             validate_body.append(f"params = [p for p in sig.parameters if p != 'self']")
-            validate_body.append(f"if len(params) != {expected}:")
-            validate_body.append(f"    errors.append(f\"❌ {fn_name}: 期望{expected}个参数，实际{{len(params)}}个 → 必崩\")")
+            validate_body.append(f"if len(params) != {expected_count}:")
+            validate_body.append(f"    errors.append(f\"❌ {fn_name}: 期望{expected_count}个参数，实际{{len(params)}}个 → 必崩\")")
             validate_body.append(f"else:")
             validate_body.append(f"    print(f\"  ✅ {fn_name}: {{len(params)}}个参数 OK\")")
+            
+            # 参数类型检查
+            if expected_types:
+                validate_body.append(f"    hints = get_type_hints(self.{fn_name})")
+                for param_name, expected_type in expected_types.items():
+                    validate_body.append(f"    if '{param_name}' in hints:")
+                    validate_body.append(f"        actual_type = hints['{param_name}'].__name__ if hasattr(hints['{param_name}'], '__name__') else str(hints['{param_name}'])")
+                    validate_body.append(f"        expected = '{expected_type}'")
+                    validate_body.append(f"        if actual_type.lower() != expected.lower() and expected.lower() != 'any':")
+                    validate_body.append(f"            errors.append(f\"⚠️ {fn_name}.{param_name}: 类型标注是{{actual_type}}，期望{expected_type}\")")
+                    validate_body.append(f"        else:")
+                    validate_body.append(f"            print(f\"    ✅ {param_name}: {{actual_type}} (期望{expected_type})\")")
 
         validate_body.append("if errors:")
         validate_body.append("    print('\\n'.join(errors))")
@@ -76,7 +104,7 @@ class Builder:
 
         merged.functions.append(IRFunction(
             name="validate", inputs=[], output="bool",
-            doc="运行时自检：验证所有能力函数的参数签名",
+            doc="运行时自检：参数个数 + 类型检查",
             body=validate_body
         ))
 
@@ -86,7 +114,6 @@ class Builder:
             f"print(\"产品: {product_name}\")",
             f"print(\"包含模块: {module_names}\")",
             "",
-            "# 先跑自检",
             "if not self.validate():",
             "    print(\"\\n❌ 自检失败，中止运行\")",
             "    return {\"status\": \"validation_failed\"}",
