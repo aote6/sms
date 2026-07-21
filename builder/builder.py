@@ -4,6 +4,7 @@ from module import Module
 from ir.compiler import IRCompiler
 from ir.ir import IRModule, IRFunction
 from backend.python_backend import PythonBackend
+from .param_checker import check_params
 
 
 class Builder:
@@ -22,16 +23,12 @@ class Builder:
         return artifact.path
 
     def _count_params(self, input_type: str) -> int:
-        """根据 input_type 字符串估算参数个数"""
         if not input_type or input_type in ("none", "any", ""):
             return 0
-        # "key: str, value: Any" -> 2
-        # "code: str" -> 1
         parts = [p.strip() for p in input_type.split(",") if p.strip()]
         return len(parts)
 
     def _gen_test_args(self, count: int) -> str:
-        """生成测试参数"""
         if count == 0:
             return ""
         elif count == 1:
@@ -43,36 +40,62 @@ class Builder:
 
     def _merge_ir(self, product_name: str, ir_modules: List[IRModule], main_module: Module) -> IRModule:
         merged = IRModule(
-            name=product_name,
-            version="1.0.0",
-            runtime="python",
-            imports=["from typing import Any"],
-            metadata={
-                "product": product_name,
-                "modules": [ir.name for ir in ir_modules]
-            }
+            name=product_name, version="1.0.0", runtime="python",
+            imports=["from typing import Any", "import inspect"],
+            metadata={"product": product_name, "modules": [ir.name for ir in ir_modules]}
         )
 
-        # 记录每个函数的参数个数，用于 main 调用
         fn_params = {}
         for ir in ir_modules:
             prefix = ir.name.lower().replace(' ', '_')
             for fn in ir.functions:
                 new_name = f"{prefix}_{fn.name}"
                 fn.name = new_name
-                fn_params[new_name] = self._count_params(fn.inputs[0] if fn.inputs else "")
+                fn_params[new_name] = fn.inputs[0] if fn.inputs else ""
                 merged.functions.append(fn)
 
+        # 生成 validate 方法 —— 运行时自检
+        validate_body = [
+            "print(\"🔍 运行时自检...\")",
+            "errors = []",
+        ]
+        for fn_name, input_type in fn_params.items():
+            expected = self._count_params(input_type)
+            validate_body.append(f"sig = inspect.signature(self.{fn_name})")
+            validate_body.append(f"params = [p for p in sig.parameters if p != 'self']")
+            validate_body.append(f"if len(params) != {expected}:")
+            validate_body.append(f"    errors.append(f\"❌ {fn_name}: 期望{expected}个参数，实际{{len(params)}}个 → 必崩\")")
+            validate_body.append(f"else:")
+            validate_body.append(f"    print(f\"  ✅ {fn_name}: {{len(params)}}个参数 OK\")")
+
+        validate_body.append("if errors:")
+        validate_body.append("    print('\\n'.join(errors))")
+        validate_body.append("    return False")
+        validate_body.append("print('  ✅ 全部参数验证通过')")
+        validate_body.append("return True")
+
+        merged.functions.append(IRFunction(
+            name="validate", inputs=[], output="bool",
+            doc="运行时自检：验证所有能力函数的参数签名",
+            body=validate_body
+        ))
+
+        # 生成 main
         module_names = [ir.name for ir in ir_modules]
         main_body = [
             f"print(\"产品: {product_name}\")",
             f"print(\"包含模块: {module_names}\")",
             "",
-            f"results = {{}}",
+            "# 先跑自检",
+            "if not self.validate():",
+            "    print(\"\\n❌ 自检失败，中止运行\")",
+            "    return {\"status\": \"validation_failed\"}",
+            "",
+            "results = {}",
         ]
-        for fn_name, param_count in fn_params.items():
-            args = self._gen_test_args(param_count)
-            main_body.append(f"# 调用 {fn_name}({args})")
+        for fn_name, input_type in fn_params.items():
+            count = self._count_params(input_type)
+            args = self._gen_test_args(count)
             main_body.append(f"results[\"{fn_name}\"] = self.{fn_name}({args})")
             main_body.append(f"print(f\"  {{results['{fn_name}']}}\")")
 
@@ -81,11 +104,8 @@ class Builder:
         main_body.append("return results")
 
         merged.functions.append(IRFunction(
-            name="main",
-            inputs=[],
-            output="dict",
-            doc=f"产品入口: {product_name}",
-            body=main_body
+            name="main", inputs=[], output="dict",
+            doc=f"产品入口: {product_name}", body=main_body
         ))
 
         return merged
