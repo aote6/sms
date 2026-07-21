@@ -1,0 +1,108 @@
+SMS 开发路线图
+===============
+
+总体阶段
+--------
+Phase 1: 制定标准（当前阶段）
+Phase 2: AI Agent 验证（第一块试验田）
+Phase 3: 第二个领域验证
+Phase 4: 标准化扩散
+
+
+Phase 1: 制定标准 [当前]
+-----------------------
+
+已完成：
+  [✓] core/     知识图谱（节点、边、图）
+  [✓] assembly/ 装配引擎（DAG 生成、拓扑排序）
+  [✓] ir/       中间表示（IR 定义、编译器骨架）
+  [✓] backend/  Python 后端（IR -> Python 代码）
+  [✓] build/    构建系统（SHA256 指纹、缓存、工件）
+  [✓] registry/ 模块注册表
+  [✓] runtime/  运行时加载器
+  [✓] 项目愿景文档
+  [✓] 系统架构文档
+  [✓] 标准模块规范 v0.1
+
+进行中：
+  [ ] 按规范更新 module/module.py
+      - 新增 package_type 字段
+      - 扩展 quality_state 枚举（blank/pending/testing/passed/scrapped/maintained）
+      - 新增 author/origin/expires_at 字段
+      - 新增 submodules 字段
+      - 新增 version_history 字段
+
+  [ ] 更新 module/evidence.py
+      - 丰富检测信息字段
+
+  [ ] 更新 registry/registry.py
+      - 支持按 quality_state 筛选
+      - 支持按 package_type 筛选
+
+  [ ] 实现 Concept Registry 最小可用版本
+      - Concept ID 生成
+      - 别名管理
+      - 层级关系（parent/child）
+
+待开始：
+  [ ] IRCompiler 升级
+      - 从 Capability 描述生成更丰富的 IR
+      - 替换当前的 TODO 占位逻辑
+
+  [ ] 实现 Importer（第一版仅支持 Python 单文件）
+      - AST 解析
+      - Capability 提取
+      - Contract 推断
+
+  [ ] 完善 Builder
+      - 多模块组合构建
+      - 胶水代码生成
+
+
+Phase 2: AI Agent 验证（第一块试验田）
+--------------------------------------
+目标：用 SMS 制造 AI Agent 组件，证明标准体系可用。
+
+Agent 的 5 类标准件：
+  Tool    - 工具能力模块
+  Memory  - 记忆/存储模块
+  Planner - 规划/推理模块
+  Executor - 执行模块
+  Protocol - Agent 间通信协议模块
+
+验证目标：
+  制造一个双 Agent 协作系统
+  Agent A（需求分析） + Agent B（代码生成）
+  证明：SMS 标准在 Agent 领域能产生数量级效率提升
+
+关键任务：
+  [ ] 定义 Agent 领域的 Capability 标准词汇
+  [ ] 实现 Agent 行为验证（Evidence for Agent）
+  [ ] 实现多 Agent 装配拓扑（主从/对等/流水线）
+  [ ] 端到端 Demo：图谱定义 -> 模块制造 -> 装配 -> 运行
+
+
+Phase 3: 第二个领域验证
+-----------------------
+候选领域：
+  - 编译器组件（Lexer、Parser、CodeGen）
+  - 后端服务（Auth、Cache、Queue）
+  - CLI 工具链
+
+目标：证明标准可跨领域迁移
+
+
+Phase 4: 标准化扩散
+-------------------
+  [ ] 开放 Concept Registry 扩展机制
+  [ ] 多语言 Backend 完善（Rust、JavaScript、Java）
+  [ ] 社区贡献 Importer/Exporter
+  [ ] 模块市场 / Registry 服务
+
+
+核心原则
+--------
+1. 不发明新东西，借鉴工业世界已验证的标准
+2. 先在足够重要的领域证明价值，再扩展边界
+3. AI 只是供应商之一，工厂才是核心
+4. 标准模块是递归的——组合后的产品仍是模块

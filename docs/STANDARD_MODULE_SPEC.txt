@@ -1,0 +1,158 @@
+SMS Standard Module 规范 v0.1
+====================================
+
+定位
+----
+软件模块 = 电子元器件
+SMS = 元器件制造工厂
+借鉴电子元器件行业的规格书、品控、封装标准，不照搬食品/药品等其他行业。
+
+
+一、身份标签
+-----------
+每个标准模块出厂时必须携带以下身份信息：
+
+字段         说明                                      必填
+---------------------------------------------------------------------------
+指纹         SHA256 哈希，全球唯一，机器识别              是
+名称         人类可读的模块名，如 KeyboardRenderer         是
+版本号       遵循 主版本.次版本.修订号，如 1.0.0           是
+封装类型     atomic / composite / imported / generated   是
+
+封装类型说明：
+
+类型          说明                                    例子
+---------------------------------------------------------------------------
+atomic       最小单元，单一函数或类，不可再拆分          read_file()
+composite    由多个子模块组合而成                       KeyboardEngine
+imported     从外部导入（PyPI、GitHub 等）              requests
+generated    AI 或工具生成的模块                        AI 生成的 ConfigParser
+
+
+二、数据手册 (Datasheet)
+-----------------------
+借鉴电子元器件规格书，描述模块的完整技术参数。
+小模块（atomic）可精简，大模块（composite/imported）需完整填写。
+
+字段          说明                              小模块    大模块
+--------------------------------------------------------------------
+功能概述      一句话说清楚这个模块干什么            是       是
+引脚定义      输入参数和输出值                     是       是
+运行条件      语言版本、系统要求、内存限制等         是       是
+性能参数      基准测试结果、响应时间等              可选      是
+精度指标      测试覆盖率、通过率                    是       是
+极限条件      使用限制、边界条件、已知问题           可选      是
+封装信息      子模块列表及版本（仅composite）        -        是
+版本历史      版本号与更新时间记录                  可选      是
+
+
+三、品控标签
+-----------
+借鉴电子元器件质检流程，模块生命周期如下：
+
+状态          说明                              能入库    能装配
+--------------------------------------------------------------------
+blank         毛坯，骨架有了内容未填                否       否
+pending       内容已填完，等待检测                   否       否
+testing       正在跑测试                            否       否
+passed        检测通过，可出厂                      是       是
+scrapped      已报废，不建议使用                     否       否
+maintained    有新版本开发中，当前版本仍可用          是       是
+
+状态流转：
+blank -> pending -> testing -> passed -> maintained -> scrapped
+testing -> blank (返工)
+testing -> scrapped (放弃)
+
+合格标记：
+模块状态变为 passed 必须同时满足：
+1. Contract 已定义（inputs/outputs 明确）
+2. Capability 已填写（功能描述非空）
+3. 测试通过（test_pass = True）
+4. 覆盖率 >= 80%
+5. 性能基准已记录（benchmark 数据非空）
+
+
+四、来源信息
+-----------
+字段          说明                                              必填
+---------------------------------------------------------------------------
+作者/团队     谁生产的这个模块                                     是
+产地          handwritten / ai_generated / imported / third_party 是
+维护期限      计划维护到什么时候                                   可选
+
+
+五、数据结构定义
+---------------
+
+封装类型常量：
+  ATOMIC = "atomic"
+  COMPOSITE = "composite"
+  IMPORTED = "imported"
+  GENERATED = "generated"
+
+质量状态常量：
+  BLANK = "blank"
+  PENDING = "pending"
+  TESTING = "testing"
+  PASSED = "passed"
+  SCRAPPED = "scrapped"
+  MAINTAINED = "maintained"
+
+产地常量：
+  HANDWRITTEN = "handwritten"
+  AI_GENERATED = "ai_generated"
+  IMPORTED = "imported"
+  THIRD_PARTY = "third_party"
+
+StandardModule 完整字段：
+
+  身份标签：
+    fingerprint: str       SHA256 指纹
+    name: str              模块名
+    version: str           版本号
+    package_type: str      封装类型
+
+  数据手册：
+    summary: str                    功能概述
+    inputs: list[str]               引脚定义-输入
+    outputs: list[str]              引脚定义-输出
+    runtime: str                    运行条件
+    constraints: list[str]          极限条件
+    benchmark: float                性能参数
+    coverage: float                 精度指标
+    test_pass: bool                 精度指标
+    submodules: list[dict]          封装信息（子模块列表）
+    version_history: list[dict]     版本历史
+
+  品控标签：
+    quality_state: str     质量状态
+    built_at: float        生产批次（构建时间）
+
+  来源信息：
+    author: str            作者/团队
+    origin: str            产地
+    expires_at: float      维护期限（可选）
+
+
+六、与现有代码的对齐
+-------------------
+
+规范字段        现有代码位置                                        状态
+----------------------------------------------------------------------------
+指纹            build/fingerprint.py -> Fingerprint.module()       已实现
+名称            module/module.py -> Module.name                    已实现
+版本号          module/module.py -> Module.version                  已实现
+封装类型        无                                                 需新增
+功能概述        module/capability.py -> Capability.description     已有字段
+引脚定义        module/contract.py -> Contract.inputs/outputs       已实现
+运行条件        module/contract.py -> Contract.runtime              已实现
+性能参数        module/evidence.py -> Evidence.benchmark            已有字段
+精度指标        module/evidence.py -> Evidence.coverage/test_pass   已有字段
+极限条件        module/contract.py -> Contract.constraints          字段有，未充分利用
+封装信息        无                                                 需新增 submodules
+版本历史        无                                                 需新增
+质量状态        module/module.py -> Module.state                   需扩展状态枚举
+生产批次        build/artifact.py -> Artifact.generated_at          已实现
+来源信息        无                                                 需新增 author/origin
+维护期限        无                                                 需新增 expires_at
