@@ -1,0 +1,40 @@
+{
+  "RequirementAnalyzer": {
+    "name": "RequirementAnalyzer",
+    "version": "1.0.0",
+    "package_type": "composite",
+    "quality_state": "passed",
+    "origin": "handwritten",
+    "author": "SMS Agent Factory",
+    "capabilities": [
+      {
+        "name": "SequentialPlanner",
+        "description": "分解任务"
+      },
+      {
+        "name": "ShortTermMemory",
+        "description": "记忆"
+      }
+    ],
+    "submodules": []
+  },
+  "CodeGenerator": {
+    "name": "CodeGenerator",
+    "version": "1.0.0",
+    "package_type": "composite",
+    "quality_state": "passed",
+    "origin": "handwritten",
+    "author": "SMS Agent Factory",
+    "capabilities": [
+      {
+        "name": "ToolCode",
+        "description": "生成代码"
+      },
+      {
+        "name": "ShortTermMemory",
+        "description": "记忆"
+      }
+    ],
+    "submodules": []
+  }
+}

@@ -7,7 +7,7 @@ from .backend import Backend
 class PythonBackend(Backend):
     name = "python"
 
-    def __init__(self, output_dir: Path = Path("./build")):
+    def __init__(self, output_dir: Path = Path("./dist")):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
 
@@ -42,6 +42,7 @@ class PythonBackend(Backend):
         code += f'        self.version = "{ir.version}"\n'
         code += "        self._initialized = True\n\n"
 
+        has_main = any(fn.name == "main" for fn in ir.functions)
         for fn in ir.functions:
             code += self._emit_function(fn)
 
@@ -54,13 +55,16 @@ if __name__ == "__main__":
     instance = create()
     print(f"✅ {class_name} v{{instance.version}} 已加载")
 '''
+        if has_main:
+            code += f'''    print("\\n执行 main 入口...")
+    result = instance.main()
+    print(f"结果: {{result}}")
+'''
         return code
 
     def _clean_type(self, type_str: str) -> str:
-        """清理类型字符串为合法 Python 类型标注"""
         if not type_str or type_str in ("any", "none", "instance"):
             return "Any"
-        # "output: str" -> "str"
         if ": " in type_str:
             type_str = type_str.split(": ")[-1]
         elif ":" in type_str:
@@ -68,7 +72,6 @@ if __name__ == "__main__":
         return type_str.strip()
 
     def _emit_function(self, fn: IRFunction) -> str:
-        # 格式化输入参数
         inputs = []
         for inp in fn.inputs:
             if inp and inp not in ("none", "any"):
@@ -83,8 +86,6 @@ if __name__ == "__main__":
                 inputs.append(f"{inp}: Any")
 
         input_str = ", ".join(inputs) if inputs else ""
-
-        # 格式化输出类型
         output = self._clean_type(fn.output)
 
         code = f"    def {fn.name}(self, {input_str}) -> {output}:\n"

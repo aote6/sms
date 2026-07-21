@@ -7,9 +7,7 @@ from backend.python_backend import PythonBackend
 
 
 class Builder:
-    """将多个标准模块组合构建为完整产品"""
-
-    def __init__(self, output_dir: str = "./build", concept_registry=None):
+    def __init__(self, output_dir: str = "./dist", concept_registry=None):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
         self.compiler = IRCompiler(concept_registry=concept_registry)
@@ -37,22 +35,34 @@ class Builder:
         )
 
         for ir in ir_modules:
+            prefix = ir.name.lower().replace(' ', '_')
             for fn in ir.functions:
+                fn.name = f"{prefix}_{fn.name}"
                 merged.functions.append(fn)
 
-        main_class = main_module.name.replace(' ', '')
         module_names = [ir.name for ir in ir_modules]
+        main_body = [
+            f"print(\"产品: {product_name}\")",
+            f"print(\"包含模块: {module_names}\")",
+            "",
+            f"results = {{}}",
+        ]
+        for ir in ir_modules:
+            for fn in ir.functions:
+                main_body.append(f"# 调用 {ir.name}.{fn.name}")
+                main_body.append(f"results[\"{fn.name}\"] = self.{fn.name}(\"test_input\")")
+                main_body.append(f"print(f\"  {{results['{fn.name}']}}\")")
+
+        main_body.append("")
+        main_body.append("print(f\"\\n所有能力已执行: {len(results)} 个\")")
+        main_body.append("return results")
+
         merged.functions.append(IRFunction(
             name="main",
             inputs=[],
-            output="None",
+            output="dict",
             doc=f"产品入口: {product_name}",
-            body=[
-                f"print(\"产品: {product_name}\")",
-                f"print(\"包含模块: {module_names}\")",
-                f"instance = {main_class}()",
-                f"print(f\"入口模块: {{instance.__class__.__name__}} v{{instance.version}}\")"
-            ]
+            body=main_body
         ))
 
         return merged

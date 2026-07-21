@@ -5,7 +5,6 @@ from .contract import Contract
 from .evidence import Evidence
 
 
-# 封装类型
 class PackageType:
     ATOMIC = "atomic"
     COMPOSITE = "composite"
@@ -13,7 +12,6 @@ class PackageType:
     GENERATED = "generated"
 
 
-# 质量状态
 class QualityState:
     BLANK = "blank"
     PENDING = "pending"
@@ -22,8 +20,22 @@ class QualityState:
     SCRAPPED = "scrapped"
     MAINTAINED = "maintained"
 
+    # 合法的状态转换
+    _transitions = {
+        BLANK: [PENDING, SCRAPPED],
+        PENDING: [TESTING, SCRAPPED],
+        TESTING: [PASSED, BLANK, SCRAPPED],  # BLANK = 返工
+        PASSED: [MAINTAINED, SCRAPPED],
+        MAINTAINED: [SCRAPPED, PASSED],
+        SCRAPPED: [BLANK],  # 只能回炉
+    }
 
-# 产地
+    @classmethod
+    def can_transition(cls, from_state: str, to_state: str) -> bool:
+        allowed = cls._transitions.get(from_state, [])
+        return to_state in allowed
+
+
 class Origin:
     HANDWRITTEN = "handwritten"
     AI_GENERATED = "ai_generated"
@@ -33,32 +45,22 @@ class Origin:
 
 @dataclass
 class Module:
-    # 身份标签
     name: str
     version: str
     package_type: str = PackageType.ATOMIC
-
-    # 数据手册
     capabilities: List[Capability] = field(default_factory=list)
     contract: Optional[Contract] = None
     evidence: Optional[Evidence] = None
     submodules: List[dict] = field(default_factory=list)
     version_history: List[dict] = field(default_factory=list)
-
-    # 品控标签
     quality_state: str = QualityState.BLANK
-
-    # 来源信息
     author: str = ""
     origin: str = Origin.HANDWRITTEN
     expires_at: float = 0.0
-
-    # 保留旧字段兼容
     implementation: str = ""
     state: str = QualityState.BLANK
 
     def ready(self) -> bool:
-        """模块是否合格（可出厂）"""
         if self.contract is None:
             return False
         if self.evidence is None:
@@ -69,7 +71,10 @@ class Module:
             return False
         return True
 
-    def promote(self, new_state: str):
-        """变更质量状态"""
-        self.quality_state = new_state
-        self.state = new_state
+    def promote(self, new_state: str) -> bool:
+        """变更质量状态，返回是否成功"""
+        if QualityState.can_transition(self.quality_state, new_state):
+            self.quality_state = new_state
+            self.state = new_state
+            return True
+        return False

@@ -41,19 +41,18 @@ class IRCompiler:
             body.append(f"# 标准输出: {concept.outputs}")
         else:
             body.append(f"# 能力: {cap.name}")
-            body.append(f"# 描述: {cap.description}")
-            body.append(f"# 概念: 未注册（建议注册到 Concept Registry）")
+            body.append(f"# 概念: 未注册")
 
-        body.append(f"# 输入类型: {cap.input_type}")
-        body.append(f"# 输出类型: {cap.output_type}")
+        body.append(f"# 输入: {cap.input_type}")
+        body.append(f"# 输出: {cap.output_type}")
 
-        if cap.parameters:
-            body.append(f"# 参数: {cap.parameters}")
+        if module.contract and module.contract.constraints:
+            body.append(f"# 约束: {module.contract.constraints}")
 
-        if module.contract:
-            body.append(f"# 契约约束: {module.contract.constraints}")
-
-        body.append("pass  # TODO: 等待语义实现层填充")
+        # 生成最小可运行代码
+        cap_name = cap.name
+        body.append(f"print(f\"[{{self.__class__.__name__}}] {cap_name}: executed\")")
+        body.append("return {\"status\": \"ok\", \"capability\": \"" + cap_name + "\"}")
 
         return IRFunction(
             name=cap.name,
@@ -65,8 +64,6 @@ class IRCompiler:
 
     def _gen_imports(self, module: Module) -> list[str]:
         imports = ["from typing import Any"]
-        if module.contract and module.contract.runtime == "python":
-            imports.append("import json")
         return imports
 
     def compile_all(self, modules: list[Module]) -> list[IRModule]:
