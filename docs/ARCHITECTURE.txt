@@ -1,91 +1,49 @@
-SMS 系统架构
-=============
+SMS 系统架构 v2.0
+==================
 
-三层结构
+双核架构
 --------
+SMS 由两个核心组成：
 
-第一层：知识图谱 (Knowledge Graph)
-  存储：问题、决策、模块、契约、证据
-  一切皆为节点，一切关系皆为边
+第一核：模块工厂 (Module Factory)
+  职责：管理模块的演化
+  - 知识图谱：记录 Problem → Decision → Module → Product 的完整决策轨迹
+  - Contract 匹配：A 的输出和 B 的输入自动验证兼容性
+  - 演化追踪：改一个模块，标记所有受影响的产品
+  - 版本管理：同一模块多版本共存，产品绑定具体版本
 
-第二层：装配引擎 (Assembly Engine)
-  输入：Product 节点
-  输出：Assembly Plan（装配计划）
-  逻辑：反向追溯，找出所有依赖
+第二核：传统编译器 (Compiler)
+  职责：给 AI 装上"自己验证自己"的能力
+  - AI 生成代码 → 编译器检查 → 类型/接口/Contract 验证
+  - 不只是 Python 语法检查，是 Contract 级别的语义验证
+  - 多后端支持：Python / Rust / JS / ...
 
-第三层：构建器 (Builder)
-  输入：Assembly Plan
-  输出：可运行的产品
-  支持多后端：Python / Rust / Android / Web ...
+两个核的关系：
+  AI 对话 → 模块工厂（管理模块关系）→ 编译器（验证正确性）→ 可运行代码
 
+SMS 不做什么
+-----------
+  - 不生成代码（那是 AI 的事）
+  - 不写业务逻辑（那是 AI 和人的事）
+  - 不替代 Termux 或 Python（日常写脚本直接用它们）
 
-核心概念
---------
-
-Node（节点）：一切东西都是节点
-  Problem  - 问题是什么（如"输入法需要统一键盘"）
-  Decision - 对问题的回答（如"界面和引擎分离"）
-  Module   - 决策产生的模块（如"KeyboardRenderer"）
-  Product  - 最终产品（如"LingTi Keyboard"）
-  Evidence - 证据（测试、验证）
-
-Edge（边）：一切关系都是边
-  ANSWER   - Decision 回答 Problem
-  CREATE   - Decision 创建 Module
-  COMPOSE  - Module 组成 Product
-  VERIFY   - Evidence 验证 Module
-  DEPEND   - 模块间依赖
-
-核心公式：Problem -> Decision -> Module -> Product
-
-
-工厂的两条生产线
----------------
-
-生产线A：已有代码 -> 标准化
-  原始代码 -> 分析 -> 拆解 -> 规范化 -> Contract -> Capability -> 标准模块
-
-生产线B：从需求制造
-  Problem -> Decision -> Capability规范 -> Semantic IR -> 优化 -> Backend -> 标准模块
-
-输入可以是任何东西：Python、Rust、AI生成、GitHub项目、手写代码
-输出都是统一的 Standard Module
-
-
-Standard Module 定义
---------------------
-借鉴电子元器件行业标准，每个标准模块包含：
-
-身份标签：指纹(SHA256) + 名称 + 版本号 + 封装类型
-数据手册：功能概述 + 引脚定义 + 运行条件 + 性能参数 + 精度指标
-品控标签：质量状态 + 生产批次 + 合格标记
-来源信息：作者 + 产地 + 维护期限
-
-详见 docs/STANDARD_MODULE_SPEC.txt
-
-
-和传统开发的区别
----------------
-传统开发        SMS
-保存代码        保存问题和决策
-程序员写代码    AI 根据决策生成代码
-架构在人脑里    架构在图里
-老代码不敢删    只要决策在，代码可以随时重生
-项目越维护越难  问题图谱持续生长，演化轨迹完整
+SMS 做什么
+---------
+  - 管理模块间的关系（谁依赖谁、接口对不对）
+  - 保存决策轨迹（为什么选这个模块而不是那个）
+  - 验证演化安全（换了模块会不会崩）
+  - 给 AI 编译器（AI 现在没有的能力）
 
 
 当前代码结构
 -----------
 sms/
-  core/         知识图谱核心（节点、边、图）
-  module/       模块定义（Module、Capability、Contract、Evidence）
-  assembly/     装配引擎（从图谱生成装配计划）
-  ir/           中间表示（IR 模块、IR 函数、编译器、优化器）
-  backend/      多语言后端（Python、Rust）
-  build/        构建系统（缓存、指纹、工件、调度器）
-  registry/     模块注册表
-  pipeline/     流水线系统
-  resolver/     依赖解析器
-  generator/    模块生成器
-  runtime/      运行时加载器
-  planner/      规划器
+  core/         知识图谱核心
+  assembly/     装配引擎 + 行为验证
+  module/       标准模块定义
+  concept/      能力概念注册表
+  registry/     模块注册表（持久化）
+  ir/           中间表示
+  builder/      产品构建器
+  importer/     Python导入器（将被精简）
+  _archive/     冻结的 4500 行传统编译器（待激活）

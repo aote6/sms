@@ -1,0 +1,17 @@
+{
+  "module": "Test",
+  "version": "1.0",
+  "exports": [
+    {
+      "name": "f",
+      "params": [
+        {
+          "name": "data",
+          "type": "Any"
+        }
+      ],
+      "returns": "Any"
+    }
+  ],
+  "imports": []
+}

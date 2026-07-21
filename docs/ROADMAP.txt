@@ -1,108 +1,69 @@
-SMS 开发路线图
-===============
+SMS 开发路线图 v2.0
+=====================
 
-总体阶段
---------
-Phase 1: 制定标准（当前阶段）
-Phase 2: AI Agent 验证（第一块试验田）
-Phase 3: 第二个领域验证
-Phase 4: 标准化扩散
+定位修正（2024）
+---------------
+经过验证，SMS 不是"日常编码工具"——直接对话生成代码比 SMS 快十倍。
+SMS 的真正价值在于管理模块的演化，以及给 AI 提供它现在没有的工具。
+
+SMS 双核架构：
+  ├── 模块工厂：管理模块演化（Contract匹配、演化追踪、版本管理）
+  └── 传统编译器：给 AI 装上"自己验证自己"的能力
 
 
-Phase 1: 制定标准 [当前]
+Phase 1: 基础框架 ✅ 已完成
+---------------------------
+  [✓] 知识图谱 (core/)
+  [✓] 装配引擎 (assembly/)
+  [✓] 标准模块规范
+  [✓] 模块注册表 (registry/)
+  [✓] 概念注册表 (concept/)
+  [✓] 状态流转强制
+  [✓] Evidence 行为验证
+  [✓] Assembly 自动推导依赖
+  [✓] Contract 自动匹配
+
+
+Phase 2: 双核融合 [当前阶段]
+-----------------------------
+目标：模块工厂 + 编译器接通，AI 对话生成模块 → 编译器验证
+
+模块工厂侧（砍掉多余，聚焦核心）：
+  [ ] 砍掉 Importer（通用Python导入 — 不是SMS该干的）
+  [ ] 砍掉 IRCompiler 行为模板（代码生成是编译器的事）
+  [ ] 砍掉 Builder 代码生成（交给编译器）
+  [ ] 聚焦 Contract 匹配验证
+  [ ] 聚焦模块演化追踪（改一个模块，标记受影响的其他模块）
+  [ ] 聚焦版本管理（同一模块多版本，产品用哪个版本）
+
+编译器侧（激活 _archive 里的 4500 行编译器）：
+  [ ] 分析现有编译器架构
+  [ ] 定义编译器与模块工厂的接口
+  [ ] 编译器接收 Standard Module，输出编译结果
+  [ ] 不只是语法检查，是 Contract 级别的类型验证
+  [ ] AI 生成代码 → 编译器检查 → 当场发现问题
+
+
+Phase 3: 演化验证
+-----------------
+目标：证明 SMS 的真正价值 — 系统演化时不崩
+
+  [ ] 多版本模块管理
+  [ ] 模块替换：A→B，自动验证 Contract 兼容
+  [ ] 影响分析：改一个模块，图谱标记所有受影响的产品
+  [ ] 回滚：决策变了，自动回到之前的模块组合
+
+
+Phase 4: 扩展到其他领域
 -----------------------
-
-已完成：
-  [✓] core/     知识图谱（节点、边、图）
-  [✓] assembly/ 装配引擎（DAG 生成、拓扑排序）
-  [✓] ir/       中间表示（IR 定义、编译器骨架）
-  [✓] backend/  Python 后端（IR -> Python 代码）
-  [✓] build/    构建系统（SHA256 指纹、缓存、工件）
-  [✓] registry/ 模块注册表
-  [✓] runtime/  运行时加载器
-  [✓] 项目愿景文档
-  [✓] 系统架构文档
-  [✓] 标准模块规范 v0.1
-
-进行中：
-  [ ] 按规范更新 module/module.py
-      - 新增 package_type 字段
-      - 扩展 quality_state 枚举（blank/pending/testing/passed/scrapped/maintained）
-      - 新增 author/origin/expires_at 字段
-      - 新增 submodules 字段
-      - 新增 version_history 字段
-
-  [ ] 更新 module/evidence.py
-      - 丰富检测信息字段
-
-  [ ] 更新 registry/registry.py
-      - 支持按 quality_state 筛选
-      - 支持按 package_type 筛选
-
-  [ ] 实现 Concept Registry 最小可用版本
-      - Concept ID 生成
-      - 别名管理
-      - 层级关系（parent/child）
-
-待开始：
-  [ ] IRCompiler 升级
-      - 从 Capability 描述生成更丰富的 IR
-      - 替换当前的 TODO 占位逻辑
-
-  [ ] 实现 Importer（第一版仅支持 Python 单文件）
-      - AST 解析
-      - Capability 提取
-      - Contract 推断
-
-  [ ] 完善 Builder
-      - 多模块组合构建
-      - 胶水代码生成
+  [ ] 从 Agent 领域扩展到编译器组件
+  [ ] 从 Agent 领域扩展到后端服务
+  [ ] 多语言编译器后端
 
 
-Phase 2: AI Agent 验证（第一块试验田）
---------------------------------------
-目标：用 SMS 制造 AI Agent 组件，证明标准体系可用。
-
-Agent 的 5 类标准件：
-  Tool    - 工具能力模块
-  Memory  - 记忆/存储模块
-  Planner - 规划/推理模块
-  Executor - 执行模块
-  Protocol - Agent 间通信协议模块
-
-验证目标：
-  制造一个双 Agent 协作系统
-  Agent A（需求分析） + Agent B（代码生成）
-  证明：SMS 标准在 Agent 领域能产生数量级效率提升
-
-关键任务：
-  [ ] 定义 Agent 领域的 Capability 标准词汇
-  [ ] 实现 Agent 行为验证（Evidence for Agent）
-  [ ] 实现多 Agent 装配拓扑（主从/对等/流水线）
-  [ ] 端到端 Demo：图谱定义 -> 模块制造 -> 装配 -> 运行
-
-
-Phase 3: 第二个领域验证
------------------------
-候选领域：
-  - 编译器组件（Lexer、Parser、CodeGen）
-  - 后端服务（Auth、Cache、Queue）
-  - CLI 工具链
-
-目标：证明标准可跨领域迁移
-
-
-Phase 4: 标准化扩散
--------------------
-  [ ] 开放 Concept Registry 扩展机制
-  [ ] 多语言 Backend 完善（Rust、JavaScript、Java）
-  [ ] 社区贡献 Importer/Exporter
-  [ ] 模块市场 / Registry 服务
-
-
-核心原则
---------
-1. 不发明新东西，借鉴工业世界已验证的标准
-2. 先在足够重要的领域证明价值，再扩展边界
-3. AI 只是供应商之一，工厂才是核心
-4. 标准模块是递归的——组合后的产品仍是模块
+核心原则（修正后）
+------------------
+1. SMS 不是日常编码工具，是演化管理基础设施
+2. 模块工厂只管模块间关系，不管代码怎么写
+3. 编译器给 AI 用，让 AI 能自己验证自己生成的代码
+4. 直接对话写脚本用 Termux，管理多模块系统用 SMS

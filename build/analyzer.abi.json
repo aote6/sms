@@ -1,0 +1,17 @@
+{
+  "module": "Analyzer",
+  "version": "1.0.0",
+  "exports": [
+    {
+      "name": "plan",
+      "params": [
+        {
+          "name": "data",
+          "type": "Any"
+        }
+      ],
+      "returns": "Any"
+    }
+  ],
+  "imports": []
+}
