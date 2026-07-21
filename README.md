@@ -1,28 +1,23 @@
 # SMS - Software Manufacturing System
 
 软件制造系统。不是 IDE，不是编译器，不是编程语言，不是 AI 编程助手。
-是一个全新的品类：用工业化方式生产软件的系统。
 
 ## 核心思想
-
-工业革命前，工匠手工制作每一个零件。
-工业革命后，标准件 + 流水线 + 工厂 = 规模化制造。
-
-SMS 做的是同样的事，对象是软件。
-
-## 软件的第一公民不是代码
 
 代码是化石，决策是回应，问题是根源。
 SMS 保存的不是代码，是软件之所以成为软件的认知根源。
 
     Problem -> Decision -> Module -> Product
 
+## 当前定位（2026-07-21 确认，唯一权威见 docs/STATUS.md）
+
+模块工厂 + 验证引擎：验证"改了会不会崩"，不做代码生成、不做多语言编译。
+
 ## 文档
 
-- 项目愿景: docs/PROJECT_VISION.txt
-- 系统架构: docs/ARCHITECTURE.txt
-- 标准模块规范: docs/STANDARD_MODULE_SPEC.txt
-- 开发路线图: docs/ROADMAP.txt
+- 项目状态与架构（唯一权威）: docs/STATUS.md
+- 标准模块规范: docs/STANDARD_MODULE_SPEC.md
+- 会话交接: docs/HANDOFF.md（每次会话结束时按需生成，当前尚未生成过，不存在也正常）
 
 ## 快速开始
 

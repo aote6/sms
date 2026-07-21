@@ -46,5 +46,24 @@
       ],
       "submodules": []
     }
+  ],
+  "GameRenderer": [
+    {
+      "name": "GameRenderer",
+      "version": "1.0.0",
+      "package_type": "atomic",
+      "quality_state": "pending",
+      "origin": "handwritten",
+      "author": "aote6",
+      "capabilities": [
+        {
+          "name": "draw",
+          "description": "渲染当前帧到stdscr,纯副作用无返回值",
+          "input_type": "game:GameState",
+          "output_type": "None"
+        }
+      ],
+      "submodules": []
+    }
   ]
 }
