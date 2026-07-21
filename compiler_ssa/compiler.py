@@ -1,5 +1,4 @@
-"""SMS 编译器主入口（带 Profile，简洁输出）"""
-
+"""SMS 编译器主入口"""
 from compiler_ssa.frontend import ModuleParser
 from compiler_ssa.optimize.ir_builder import IRBuilderPass
 from compiler_ssa.artifact import IRArtifact
@@ -16,6 +15,7 @@ from compiler_ssa.passes import (
     GVN,
     Inline,
 )
+from compiler_ssa.passes.contract_verify import ContractVerify
 from compiler_ssa.analysis.dominator import DominatorTree
 from compiler_ssa.analysis.frontier import DominanceFrontier
 from compiler_ssa.analysis.verify_cfg import CFGVerifier
@@ -40,6 +40,7 @@ class Compiler:
         self.pipeline = PassPipeline()
         self.pipeline.add(ValidatePass())
         self.pipeline.add(VerifyType())
+        self.pipeline.add(ContractVerify())  # 新增：Contract 验证
         self.pipeline.add(ConstantFoldPass())
         self.pipeline.add(DeadCodePass())
         self.pipeline.add(Mem2RegPass())
@@ -49,15 +50,9 @@ class Compiler:
         self.pipeline.add(Inline())
 
         self.pass_names = [
-            "Validate",
-            "VerifyType",
-            "ConstantFold",
-            "DeadCode",
-            "Mem2Reg",
-            "CopyPropagation",
-            "VerifySSA",
-            "GVN",
-            "Inline",
+            "Validate", "VerifyType", "ContractVerify",
+            "ConstantFold", "DeadCode", "Mem2Reg",
+            "CopyPropagation", "VerifySSA", "GVN", "Inline",
         ]
 
     def compile(self, module) -> IRArtifact:
@@ -76,104 +71,59 @@ class Compiler:
             abi = self.abi_builder.build_from_artifact(artifact)
 
         artifact.metadata["abi"] = abi
-
         self.output_dir.mkdir(exist_ok=True)
-        module_name = abi.module.lower()
-
-        abi_file = self.output_dir / f"{module_name}.abi.json"
-        abi_file.write_text(abi.to_json(), encoding="utf-8")
-        artifact.metadata["abi_file"] = str(abi_file)
-
-        py_file = self.output_dir / f"{module_name}.py"
-        if "source" in artifact.metadata:
-            py_file.write_text(artifact.metadata["source"], encoding="utf-8")
-            artifact.metadata["py_file"] = str(py_file)
 
         if self._profiler:
             self._profiler.end_phase()
-            # 更新统计
-            if artifact.module:
-                total_inst = sum(len(b.instructions) for f in artifact.module.functions for b in f.blocks)
-                total_blocks = sum(len(f.blocks) for f in artifact.module.functions)
-                self._profiler.update_stats(
-                    modules=1,
-                    functions=len(artifact.module.functions),
-                    basic_blocks=total_blocks,
-                    instructions=total_inst,
-                )
-            self._profiler.summary()
+            self._profiler.start_phase("Optimize")
+            artifact.module = self._run_pipeline_with_profile(artifact.module)
+            self._profiler.end_phase()
+        else:
+            artifact.module = self.pipeline.run(artifact.module)
 
+        artifact.verified = True
+        artifact.optimized = True
+        artifact.metadata["passes"] = self.pass_names
+
+        if self._profiler:
+            self._profiler.start_phase("Analysis")
+
+        callgraph = CallGraph()
+        callgraph.build(artifact.module)
+        artifact.metadata["callgraph"] = callgraph
+
+        if self.debug:
+            callgraph.print_graph()
+
+        for fn in artifact.module.functions:
+            verifier = CFGVerifier(fn)
+            if self.debug:
+                verifier.verify()
+
+            tree = DominatorTree(fn)
+            tree.build()
+            fn.dominator = tree
+
+            frontier = DominanceFrontier(fn)
+            frontier.build()
+            fn.frontier = frontier
+            if self.debug:
+                frontier.print_frontier()
+
+            ssa = SSABuilder()
+            ssa.build(fn)
+
+        if self._profiler:
+            self._profiler.end_phase()
+
+        artifact.ssa = True
         return artifact
 
     def compile_to_ir(self, module) -> IRArtifact:
-        if self._profiler:
-            self._profiler.start_phase("Parse")
+        # 保存 Contract 信息到 artifact metadata
         artifact = self.frontend.parse(module)
-        if self._profiler:
-            self._profiler.end_phase()
-
-        if self._profiler:
-            self._profiler.start_phase("IR Build")
-        artifact = self.builder.run(artifact)
-        if self._profiler:
-            self._profiler.end_phase()
-
-        if artifact.module:
-            if self._profiler:
-                self._profiler.start_phase("Validate")
-            snapshot = []
-            for fn in artifact.module.functions:
-                snapshot.append({
-                    "name": fn.name,
-                    "params": [{"name": p.name, "type": str(p.type) if p.type else "Any"} for p in fn.parameters],
-                    "returns": str(fn.returns) if fn.returns else "void",
-                })
-            artifact.metadata["function_snapshot"] = snapshot
-            if self._profiler:
-                self._profiler.end_phase()
-
-            if self._profiler:
-                self._profiler.start_phase("Optimize")
-                artifact.module = self._run_pipeline_with_profile(artifact.module)
-                self._profiler.end_phase()
-            else:
-                artifact.module = self.pipeline.run(artifact.module)
-
-            artifact.verified = True
-            artifact.optimized = True
-            artifact.metadata["passes"] = self.pass_names
-
-            if self._profiler:
-                self._profiler.start_phase("Analysis")
-            callgraph = CallGraph()
-            callgraph.build(artifact.module)
-            artifact.metadata["callgraph"] = callgraph
-
-            if self.debug:
-                callgraph.print_graph()
-
-            for fn in artifact.module.functions:
-                verifier = CFGVerifier(fn)
-                if self.debug:
-                    verifier.verify()
-
-                tree = DominatorTree(fn)
-                tree.build()
-                fn.dominator = tree
-
-                frontier = DominanceFrontier(fn)
-                frontier.build()
-                fn.frontier = frontier
-                if self.debug:
-                    frontier.print_frontier()
-
-                ssa = SSABuilder()
-                ssa.build(fn)
-            if self._profiler:
-                self._profiler.end_phase()
-
-            artifact.ssa = True
-
+        if hasattr(module, 'contract') and module.contract:
+            artifact.metadata['contract'] = module.contract
         return artifact
 
     def _run_pipeline_with_profile(self, module):
@@ -184,9 +134,6 @@ class Compiler:
             duration = (time.perf_counter() - start) * 1000
             if self._profiler:
                 self._profiler.record_pass(
-                    name=p.name,
-                    duration_ms=duration,
-                    before=0,
-                    after=0
+                    name=p.name, duration_ms=duration, before=0, after=0
                 )
         return current
