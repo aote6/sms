@@ -30,13 +30,19 @@ class PythonImporter:
 
         return module
 
+    def _is_dunder(self, name: str) -> bool:
+        """检查是否是魔术方法"""
+        return name.startswith('__') and name.endswith('__')
+
     def _extract_capabilities(self, tree: ast.AST) -> list:
         """提取所有函数和类作为能力"""
         caps = []
 
         for node in ast.walk(tree):
             if isinstance(node, ast.FunctionDef):
-                if node.name.startswith('_') and node.name != '__init__':
+                if node.name.startswith('_') and not self._is_dunder(node.name):
+                    continue
+                if self._is_dunder(node.name):
                     continue
                 caps.append(Capability(
                     name=node.name,
@@ -68,8 +74,9 @@ class PythonImporter:
                 if node.module:
                     imports.append(node.module)
             elif isinstance(node, ast.FunctionDef):
-                if not node.name.startswith('_'):
-                    functions.append(node.name)
+                if not node.name.startswith('_') or self._is_dunder(node.name):
+                    continue
+                functions.append(node.name)
             elif isinstance(node, ast.ClassDef):
                 classes.append(node.name)
 
