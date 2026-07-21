@@ -10,11 +10,17 @@ class ConceptRegistry:
         self._by_alias: dict[str, str] = {}
 
     def register(self, concept: Concept):
-        """注册一个新概念"""
+        """注册一个新概念，自动建立父子关系"""
         self._by_id[concept.concept_id] = concept
         self._by_alias[concept.name.lower()] = concept.concept_id
         for alias in concept.aliases:
             self._by_alias[alias.lower()] = concept.concept_id
+
+        # 自动添加到父类的 children 列表
+        if concept.parent and concept.parent in self._by_id:
+            parent = self._by_id[concept.parent]
+            if concept.concept_id not in parent.children:
+                parent.children.append(concept.concept_id)
 
     def get(self, concept_id: str) -> Optional[Concept]:
         """按ID查找"""
@@ -25,7 +31,6 @@ class ConceptRegistry:
         concept_id = self._by_alias.get(name.lower())
         if concept_id:
             return self._by_id.get(concept_id)
-        # 模糊匹配：名称包含关系
         for alias, cid in self._by_alias.items():
             if name.lower() in alias or alias in name.lower():
                 return self._by_id.get(cid)
