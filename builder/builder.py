@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from module import Module
 from ir.compiler import IRCompiler
 from ir.ir import IRModule, IRFunction
@@ -9,10 +9,10 @@ from backend.python_backend import PythonBackend
 class Builder:
     """将多个标准模块组合构建为完整产品"""
 
-    def __init__(self, output_dir: str = "./build"):
+    def __init__(self, output_dir: str = "./build", concept_registry=None):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
-        self.compiler = IRCompiler()
+        self.compiler = IRCompiler(concept_registry=concept_registry)
         self.backend = PythonBackend(output_dir=self.output_dir)
 
     def build_product(self, name: str, modules: List[Module], main_module: Module = None) -> Path:
