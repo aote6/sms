@@ -88,6 +88,9 @@ class ModuleRegistry:
         }
 
     def upgrade_module(self, module_name: str, new_module: Module, dry_run: bool = False) -> dict:
+        from invariants.registry_contracts import check_upgrade_preconditions
+        check_upgrade_preconditions(module_name, new_module, self.get(module_name))
+
         old_module = self.get(module_name)
         if not old_module:
             raise ValueError(f"模块 {module_name} 不存在，无法升级")
