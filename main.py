@@ -1,144 +1,126 @@
 """
-SMS Demo Entry Point (2026-07-26)
+SMS + Kuai 集成版
 
-从 registry 里的模块出发，经过 invariants 完整性检查 -> BuildGraph 依赖排序
--> BuildDriver(增量构建: 指纹+缓存+并行) -> RuntimeLoader 动态加载
+SMS 负责增量调度，Kuai 负责执行。
+模块 = Kuai flow 文件，构建 = 执行 flow。
+每个模块在独立的临时目录中执行，测试隔离。
 """
+
+import os, sys, time, shutil, tempfile
+
+KUAI_HOME = '/data/data/com.termux/files/home/kuai'
+sys.path.insert(0, KUAI_HOME)
 
 from module import Module, Capability, Contract, Evidence, QualityState
 from registry import ModuleRegistry
-from resolver import GapResolver
-from ir import IRCompiler
-from backend.python.builder import PythonBuilder
-from runtime import RuntimeLoader
-from build import BuildGraph, BuildCache, BuildScheduler, BuildExecutor, BuildDriver
-from build.artifact import Artifact
-from invariants.module_completeness import check_module_completeness
-from sms_build_adapters import BackendAdapter, SimplePackager
+from build import BuildGraph
+
+from flow.parser import parse_flow
+from flow.registry import build_executable_blocks
+from core.engine import Engine
+from core.state import State
 
 
-# 1. 模块仓库
+# 测试数据模板目录
+TEST_FIXTURE = os.path.expanduser("~/test_project")
+
+
+def prepare_test_dir():
+    """复制模板目录到临时位置，返回临时目录路径"""
+    tmpdir = tempfile.mkdtemp(prefix="sms_test_")
+    if os.path.isdir(TEST_FIXTURE):
+        shutil.copytree(TEST_FIXTURE, tmpdir, dirs_exist_ok=True)
+    else:
+        os.makedirs(tmpdir, exist_ok=True)
+    return tmpdir
+
+
+class KuaiExecutor:
+    def __init__(self, flow_dir=f"{KUAI_HOME}/flows"):
+        self.flow_dir = flow_dir
+    
+    def execute(self, module_name: str, work_dir: str) -> dict:
+        """在指定的 work_dir 中执行模块"""
+        flow_file = os.path.join(self.flow_dir, f"{module_name}.flow")
+        if not os.path.exists(flow_file):
+            return {"status": "error", "error": f"flow 文件不存在: {flow_file}"}
+        
+        with open(flow_file, "r", encoding="utf-8") as f:
+            text = f.read()
+        
+        # 替换 flow 中的路径为临时工作目录
+        text = text.replace('/data/data/com.termux/files/home/test_project', work_dir)
+        text = text.replace('/data/data/com.termux/files/home/图片测试', work_dir)
+        text = text.replace('/data/data/com.termux/files/home/归档测试', work_dir)
+        
+        parsed = parse_flow(text)
+        executable = build_executable_blocks(parsed)
+        
+        engine = Engine(verbose=False)
+        current_state = State()
+        blocks_only = []
+        for block, injections in executable:
+            if injections:
+                current_state = current_state.with_updates(**injections)
+            blocks_only.append(block)
+        
+        try:
+            final_state = engine.run_sequence(blocks_only, current_state)
+            return {"status": "ok", "task": parsed['task'], "state": dict(final_state)}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+
+
+# 注册模块
 registry = ModuleRegistry()
+flow_dir = f"{KUAI_HOME}/flows"
+for flow_file in sorted(os.listdir(flow_dir)):
+    if not flow_file.endswith('.flow'):
+        continue
+    name = flow_file.replace('.flow', '')
+    module = Module(
+        name=name,
+        version="1.0.0",
+        quality_state=QualityState.PASSED,
+        capabilities=[Capability(name, f"执行 {name} 流水线", "state", "state")],
+        contract=Contract(runtime="python"),
+        evidence=Evidence(test_pass=True, coverage=0.0, benchmark=0.0),
+    )
+    registry.register(module)
 
-kb_module = Module(
-    name="KeyboardRenderer",
-    version="1.0.0",
-    quality_state=QualityState.PASSED,
-    capabilities=[
-        Capability("render", "渲染键盘界面", "key_events", "display"),
-        Capability("layout", "管理键盘布局", "config", "layout_data"),
-    ],
-    contract=Contract(runtime="python"),
-    evidence=Evidence(test_pass=True, coverage=0.85, benchmark=100.0),
-)
-registry.register(kb_module)
+print(f"已注册 {len(registry.modules)} 个模块")
 
-py_module = Module(
-    name="PinyinEngine",
-    version="0.5.0",
-    quality_state=QualityState.BLANK,
-    capabilities=[],
-    contract=None,
-    evidence=None,
-)
-registry.register(py_module)
-
-# 2. 建 BuildGraph（从 registry 已注册模块）
+# BuildGraph
 build_graph = BuildGraph()
 for name in registry.modules.keys():
     build_graph.node(name)
-for name, module in registry.modules.items():
-    for sub in (module.submodules or []):
-        dep_name = sub.get("name") if isinstance(sub, dict) else None
-        if dep_name:
-            build_graph.add_dependency(name, dep_name)
+    build_graph.mark_dirty(name)
 
-# 3. Gap Resolver —— 扫描 BuildGraph 节点，没注册的自动生成 TODO
-gap_resolver = GapResolver(registry)
-gap_resolver.resolve_graph(build_graph)
-gap_resolver.summary()
+print(f"\n{'='*60}")
+print(f"SMS 调度 + Kuai 执行 — {len(registry.modules)} 个模块 (隔离测试)")
+print('='*60)
 
-# 4. 只把就绪的模块标记为待构建
-for name, module in registry.modules.items():
-    if module.ready():
-        build_graph.mark_dirty(name)
-    else:
-        print(f"  ⏭ 跳过未就绪模块: {name} (quality_state={module.quality_state})")
-
-build_graph.summary()
-
-# 5. 定界完整性检查
-print("\n【定界: 模块完整性检查】")
-for name, module in registry.modules.items():
-    result = check_module_completeness(module)
-    mark = "✅" if result["passed"] else "❌"
-    detail = "OK" if not result["errors"] else "; ".join(result["errors"])
-    print(f"  {mark} {name}: {detail}")
-
-# 6. 增量构建
-print("\n" + "=" * 60)
-print("构建系统 (build/ 增量构建引擎)")
-print("=" * 60)
-
-cache = BuildCache()
-compiler = IRCompiler()
-python_builder = PythonBuilder(output_dir="./dist")
-backend = BackendAdapter(python_builder)
-packager = SimplePackager()
-
-executor = BuildExecutor(
-    registry=registry,
-    compiler=compiler,
-    backend=backend,
-    packager=packager,
-    cache=cache,
-)
-scheduler = BuildScheduler(build_graph)
-driver = BuildDriver(scheduler=scheduler, executor=executor, workers=4)
-
-built = driver.run(build_graph)
-driver.journal.summary()
-
-# 7. 加载验证
-print("\n【运行时加载验证】")
-loader = RuntimeLoader()
-
-validated = set()
-for result in driver.results:
-    if not result.success:
-        continue
-    artifact_path = result.artifact
-    if artifact_path == "cached":
-        entry = cache.get(result.task)
-        artifact_path = entry.artifact if entry else None
-    if not artifact_path:
-        continue
-    validated.add(result.task)
-    module = registry.get(result.task)
-    art = Artifact.create(
-        module=result.task,
-        version=module.version if module else "",
-        language="python",
-        path=artifact_path,
-    )
+kuai = KuaiExecutor()
+ok, fail = 0, 0
+for name in sorted(registry.modules.keys()):
+    # 每个模块独立临时目录
+    work_dir = prepare_test_dir()
+    print(f"  🔨 {name}...", end=" ")
+    start = time.time()
     try:
-        instance = loader.create(art)
-        print(f"  ✅ 加载成功: {result.task} v{instance.version}")
+        result = kuai.execute(name, work_dir)
+        elapsed = time.time() - start
+        if result["status"] == "ok":
+            print(f"✅ ({elapsed:.2f}s) {result['task']}")
+            ok += 1
+        else:
+            print(f"❌ {result.get('error', '未知错误')}")
+            fail += 1
     except Exception as e:
-        print(f"  ❌ 加载失败: {result.task}: {e}")
+        print(f"❌ {str(e)[:80]}")
+        fail += 1
+    finally:
+        # 清理临时目录
+        shutil.rmtree(work_dir, ignore_errors=True)
 
-# 缓存兜底校验
-for name, module in registry.modules.items():
-    if name in validated or not module.ready():
-        continue
-    entry = cache.get(name)
-    if not entry:
-        continue
-    art = Artifact.create(module=name, version=module.version, language="python", path=entry.artifact)
-    try:
-        instance = loader.create(art)
-        print(f"  ✅ 加载成功(缓存): {name} v{instance.version}")
-    except Exception as e:
-        print(f"  ❌ 加载失败(缓存): {name}: {e}")
-
-print(f"\n✅ 构建完成: {len(built)} 个模块")
+print(f"\n✅ {ok}/{ok+fail} 个模块构建成功")
