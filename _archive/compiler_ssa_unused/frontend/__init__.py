@@ -1,1 +1,0 @@
-from .module_parser import ModuleParser
