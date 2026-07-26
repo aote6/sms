@@ -14,7 +14,6 @@ SimplePackager 目前是占位实现（直接返回 artifact 路径，不生成�
 不要去动 PythonBuilder 或 BuildExecutor。
 """
 
-from pathlib import Path
 from build.artifact import Artifact
 
 
