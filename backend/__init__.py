@@ -1,24 +1,6 @@
-from .backend import Backend
-from .python_backend import PythonBackend
-from .rust_backend import RustBackend
-
-class BackendRegistry:
-    def __init__(self):
-        self._backends = {}
-    
-    def register(self, backend: Backend):
-        self._backends[backend.name] = backend
-    
-    def get(self, name: str) -> Backend:
-        return self._backends.get(name)
-    
-    def list_all(self):
-        return list(self._backends.keys())
-
-# 默认注册
-_default_registry = BackendRegistry()
-_default_registry.register(PythonBackend())
-_default_registry.register(RustBackend())
-
-def get_backend(name: str) -> Backend:
-    return _default_registry.get(name)
+# backend/__init__.py
+# 原 BackendRegistry + Backend/PythonBackend/RustBackend 导入已移除。
+# 这三个类对应的文件在 _archive/ 里，属于已废弃的多语言 Codegen。
+# emit.py 和 main.py 目前直接 import backend.python_backend，
+# 需要改为使用 backend/python/builder.py 里的 PythonBuilder。
+# 此文件暂时保留为占位，不再做自动注册。

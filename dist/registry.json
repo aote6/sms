@@ -1,7 +1,7 @@
 {
-  "GameRenderer": [
+  "KeyboardRenderer": [
     {
-      "name": "GameRenderer",
+      "name": "KeyboardRenderer",
       "version": "1.0.0",
       "package_type": "atomic",
       "quality_state": "blank",
@@ -9,36 +9,31 @@
       "author": "",
       "capabilities": [
         {
-          "name": "draw",
-          "description": "渲染画面",
-          "input_type": "game",
-          "output_type": "None"
+          "name": "render",
+          "description": "渲染键盘界面",
+          "input_type": "key_events",
+          "output_type": "display"
+        },
+        {
+          "name": "layout",
+          "description": "管理键盘布局",
+          "input_type": "config",
+          "output_type": "layout_data"
         }
       ],
       "submodules": []
     }
   ],
-  "PlayState": [
+  "PinyinEngine": [
     {
-      "name": "PlayState",
-      "version": "1.0.0",
+      "name": "PinyinEngine",
+      "version": "0.5.0",
       "package_type": "atomic",
       "quality_state": "blank",
       "origin": "handwritten",
       "author": "",
-      "capabilities": [
-        {
-          "name": "update",
-          "description": "更新游戏状态",
-          "input_type": "dt",
-          "output_type": "None"
-        }
-      ],
-      "submodules": [
-        {
-          "name": "GameRenderer"
-        }
-      ]
+      "capabilities": [],
+      "submodules": []
     }
   ]
 }

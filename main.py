@@ -4,9 +4,9 @@ from assembly import AssemblyEngine
 from registry import ModuleRegistry
 from resolver import GapResolver
 from ir import IRCompiler, IROptimizer
-from backend import PythonBackend
+from backend.python.builder import PythonBuilder
 from runtime import RuntimeLoader
-from build import BuildCache, Scheduler
+from build import BuildCache, BuildScheduler
 
 # 1. 知识图谱
 graph = KnowledgeGraph()
@@ -86,7 +86,7 @@ print("="*60)
 cache = BuildCache()
 compiler = IRCompiler()
 optimizer = IROptimizer(level=2)
-backend = PythonBackend()
+backend = PythonBuilder(output_dir="./dist")
 loader = RuntimeLoader()
 
 artifacts = []
@@ -105,7 +105,7 @@ for node in plan.topological_sort():
         continue
     
     # 生成 Artifact
-    artifact = backend.emit(ir_opt)
+    artifact = backend.build(ir_opt)
     cache.update(node.id, ir_opt)
     artifacts.append(artifact)
     
