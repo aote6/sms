@@ -32,15 +32,22 @@ class PythonImporter:
         return module
 
     def _extract_imports(self, tree: ast.AST) -> list:
-        """提取本文件import的模块名，作为依赖声明的数据来源"""
+        """提取本文件import的模块名，作为依赖声明的数据来源。保留完整子模块路径，去重。"""
+        seen = set()
         imports = []
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
                 for alias in node.names:
-                    imports.append({"name": alias.name.split(".")[0]})
+                    name = alias.name
+                    if name not in seen:
+                        seen.add(name)
+                        imports.append({"name": name})
             elif isinstance(node, ast.ImportFrom):
                 if node.module:
-                    imports.append({"name": node.module.split(".")[0]})
+                    name = node.module
+                    if name not in seen:
+                        seen.add(name)
+                        imports.append({"name": name})
         return imports
 
     def _is_dunder(self, name: str) -> bool:

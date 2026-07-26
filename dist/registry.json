@@ -1,39 +1,321 @@
 {
-  "KeyboardRenderer": [
+  "registry": [
     {
-      "name": "KeyboardRenderer",
-      "version": "1.0.0",
-      "package_type": "atomic",
+      "name": "registry",
+      "version": "0.1.0",
+      "package_type": "imported",
       "quality_state": "blank",
-      "origin": "handwritten",
-      "author": "",
+      "origin": "imported",
+      "author": "u0_a6764",
       "capabilities": [
         {
-          "name": "render",
-          "description": "渲染键盘界面",
-          "input_type": "key_events",
-          "output_type": "display"
+          "name": "ModuleRegistry",
+          "description": "类: ModuleRegistry",
+          "input_type": "any",
+          "output_type": "instance"
         },
         {
-          "name": "layout",
-          "description": "管理键盘布局",
-          "input_type": "config",
-          "output_type": "layout_data"
+          "name": "register",
+          "description": "函数: register",
+          "input_type": "module",
+          "output_type": "any"
+        },
+        {
+          "name": "get",
+          "description": "函数: get",
+          "input_type": "name, version",
+          "output_type": "Optional[Module]"
+        },
+        {
+          "name": "get_versions",
+          "description": "函数: get_versions",
+          "input_type": "name",
+          "output_type": "List[Module]"
+        },
+        {
+          "name": "get_latest",
+          "description": "函数: get_latest",
+          "input_type": "name",
+          "output_type": "Optional[Module]"
+        },
+        {
+          "name": "diff",
+          "description": "函数: diff",
+          "input_type": "name, v1, v2",
+          "output_type": "dict"
+        },
+        {
+          "name": "upgrade_module",
+          "description": "函数: upgrade_module",
+          "input_type": "module_name, new_module, dry_run",
+          "output_type": "dict"
+        },
+        {
+          "name": "force_upgrade",
+          "description": "函数: force_upgrade",
+          "input_type": "module_name, new_module",
+          "output_type": "dict"
+        },
+        {
+          "name": "ready_modules",
+          "description": "函数: ready_modules",
+          "input_type": "none",
+          "output_type": "List[Module]"
+        },
+        {
+          "name": "by_state",
+          "description": "函数: by_state",
+          "input_type": "quality_state",
+          "output_type": "List[Module]"
+        },
+        {
+          "name": "by_type",
+          "description": "函数: by_type",
+          "input_type": "package_type",
+          "output_type": "List[Module]"
+        },
+        {
+          "name": "by_origin",
+          "description": "函数: by_origin",
+          "input_type": "origin",
+          "output_type": "List[Module]"
+        },
+        {
+          "name": "list_all",
+          "description": "函数: list_all",
+          "input_type": "none",
+          "output_type": "any"
+        },
+        {
+          "name": "save",
+          "description": "函数: save",
+          "input_type": "none",
+          "output_type": "any"
+        },
+        {
+          "name": "load",
+          "description": "函数: load",
+          "input_type": "none",
+          "output_type": "any"
         }
       ],
-      "submodules": []
+      "submodules": [
+        {
+          "name": "module"
+        },
+        {
+          "name": "typing"
+        },
+        {
+          "name": "json"
+        },
+        {
+          "name": "pathlib"
+        }
+      ]
     }
   ],
-  "PinyinEngine": [
+  "python_importer": [
     {
-      "name": "PinyinEngine",
-      "version": "0.5.0",
-      "package_type": "atomic",
+      "name": "python_importer",
+      "version": "0.1.0",
+      "package_type": "imported",
       "quality_state": "blank",
-      "origin": "handwritten",
-      "author": "",
-      "capabilities": [],
-      "submodules": []
+      "origin": "imported",
+      "author": "u0_a6764",
+      "capabilities": [
+        {
+          "name": "PythonImporter",
+          "description": "将 Python 源文件导入为 Standard Module",
+          "input_type": "any",
+          "output_type": "instance"
+        },
+        {
+          "name": "import_file",
+          "description": "函数: import_file",
+          "input_type": "filepath",
+          "output_type": "Module"
+        }
+      ],
+      "submodules": [
+        {
+          "name": "ast"
+        },
+        {
+          "name": "os"
+        },
+        {
+          "name": "pathlib"
+        },
+        {
+          "name": "module"
+        },
+        {
+          "name": "module.capability"
+        },
+        {
+          "name": "module.contract"
+        },
+        {
+          "name": "module.evidence"
+        },
+        {
+          "name": "pwd"
+        }
+      ]
+    }
+  ],
+  "ir": [
+    {
+      "name": "ir",
+      "version": "0.1.0",
+      "package_type": "imported",
+      "quality_state": "blank",
+      "origin": "imported",
+      "author": "u0_a6764",
+      "capabilities": [
+        {
+          "name": "IRFunction",
+          "description": "类: IRFunction",
+          "input_type": "any",
+          "output_type": "instance"
+        },
+        {
+          "name": "IRModule",
+          "description": "类: IRModule",
+          "input_type": "any",
+          "output_type": "instance"
+        },
+        {
+          "name": "to_dict",
+          "description": "函数: to_dict",
+          "input_type": "none",
+          "output_type": "any"
+        },
+        {
+          "name": "to_dict",
+          "description": "函数: to_dict",
+          "input_type": "none",
+          "output_type": "any"
+        }
+      ],
+      "submodules": [
+        {
+          "name": "dataclasses"
+        },
+        {
+          "name": "typing"
+        }
+      ]
+    }
+  ],
+  "compiler": [
+    {
+      "name": "compiler",
+      "version": "0.1.0",
+      "package_type": "imported",
+      "quality_state": "blank",
+      "origin": "imported",
+      "author": "u0_a6764",
+      "capabilities": [
+        {
+          "name": "IRCompiler",
+          "description": "类: IRCompiler",
+          "input_type": "any",
+          "output_type": "instance"
+        },
+        {
+          "name": "compile",
+          "description": "函数: compile",
+          "input_type": "module",
+          "output_type": "IRModule"
+        },
+        {
+          "name": "compile_all",
+          "description": "函数: compile_all",
+          "input_type": "modules",
+          "output_type": "list[IRModule]"
+        }
+      ],
+      "submodules": [
+        {
+          "name": "module"
+        },
+        {
+          "name": "ir"
+        }
+      ]
+    }
+  ],
+  "module": [
+    {
+      "name": "module",
+      "version": "0.1.0",
+      "package_type": "imported",
+      "quality_state": "blank",
+      "origin": "imported",
+      "author": "u0_a6764",
+      "capabilities": [
+        {
+          "name": "PackageType",
+          "description": "类: PackageType",
+          "input_type": "any",
+          "output_type": "instance"
+        },
+        {
+          "name": "QualityState",
+          "description": "类: QualityState",
+          "input_type": "any",
+          "output_type": "instance"
+        },
+        {
+          "name": "Origin",
+          "description": "类: Origin",
+          "input_type": "any",
+          "output_type": "instance"
+        },
+        {
+          "name": "Module",
+          "description": "类: Module",
+          "input_type": "any",
+          "output_type": "instance"
+        },
+        {
+          "name": "can_transition",
+          "description": "函数: can_transition",
+          "input_type": "cls, from_state, to_state",
+          "output_type": "bool"
+        },
+        {
+          "name": "ready",
+          "description": "函数: ready",
+          "input_type": "none",
+          "output_type": "bool"
+        },
+        {
+          "name": "promote",
+          "description": "变更质量状态，返回是否成功",
+          "input_type": "new_state",
+          "output_type": "bool"
+        }
+      ],
+      "submodules": [
+        {
+          "name": "dataclasses"
+        },
+        {
+          "name": "typing"
+        },
+        {
+          "name": "capability"
+        },
+        {
+          "name": "contract"
+        },
+        {
+          "name": "evidence"
+        }
+      ]
     }
   ]
 }
