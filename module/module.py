@@ -58,6 +58,14 @@ class Module:
     origin: str = Origin.HANDWRITTEN
     expires_at: float = 0.0
     implementation: str = ""
+    def __post_init__(self):
+        if not self.name:
+            raise ValueError("Module.name 不能为空")
+        if not self.version:
+            raise ValueError("Module.version 不能为空")
+        cap_names = [c.name for c in self.capabilities]
+        if len(cap_names) != len(set(cap_names)):
+            raise ValueError(f"Module {self.name} 存在重复的 capability 名称")
 
     def ready(self) -> bool:
         if self.contract is None:

@@ -41,6 +41,10 @@ class ModuleRegistry:
         self._force_upgrade = False
 
     def register(self, module: Module):
+        from invariants.module_completeness import check_module_completeness
+        completeness = check_module_completeness(module)
+        if not completeness["passed"]:
+            print(f"[警告] {module.name} 完整性不足: {completeness["errors"]}")
         if module.name not in self.versions:
             self.versions[module.name] = []
         existing = [m for m in self.versions[module.name] if m.version == module.version]
