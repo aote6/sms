@@ -93,10 +93,10 @@ SMS 是：管理模块间关系（谁依赖谁、接口对不对）+ 验证演�
 1. `contract.dependencies` 路径（第196行 `getattr(mod.contract, 'dependencies', [])`）——`Contract` 类根本没有 `dependencies` 字段（真实字段是 version/inputs/outputs/permissions/constraints/runtime），永远拿到 `[]`。`dependencies` 字段只存在于废弃的 `core/module.py` 旧 Module 定义里，和真正生效的 Contract 无关。
 2. `submodules` 路径（第193行 `module_name in (mod.submodules or [])`）——`submodules` 真实类型是 `List[dict]`（在 `module/module.py:54` 确认），但这行代码拿一个字符串去判断是否在一堆 dict 里，永远是 False。类型和判断逻辑对不上。
 
-**修复方向（未实施，需要决定）**：给 `Contract` 类补 `dependencies: list[str] = field(default_factory=list)` 字段，这样第196行已经在读的逻辑才有意义；`submodules` 那条要么改成存字符串 name 列表、要么改判断逻辑去匹配 dict 里的某个 key，两条选一条修，不能两条都留着当"看起来能用其实没用"的摆设。
+**已修复并真实验证（2026-07-26）**：选择了submodules这条路径。`python_importer.py`新增`_extract_imports`，扫描AST的Import/ImportFrom节点，把导入的模块名写入`submodules`（格式`{"name": ...}`）。`_find_dependents`改为匹配这个真实结构，同时删除`contract.dependencies`路径（Contract类从无此字段，所有真实调用点从未传过该参数，确认是死代码）。真实验证：PythonImporter对含5个真实import语句的源码测试，submodules正确提取全部5个；注册GameRenderer+PlayState两个真实模块（PlayState.submodules声明依赖GameRenderer），`_find_dependents('GameRenderer')`正确返回`['PlayState']`。依赖传播链路首次真实跑通。
 
 ## 当前最大缺口 / 待办
 
-1. **优先**：先修上面的 `_find_dependents` bug（至少让 `contract.dependencies` 那条路径真正生效），再接入第二个真实模块并显式声明依赖 GameRenderer，才能真正测出 affected 列表非空时的行为。此前"下一步接入第二个模块测依赖传播"的计划，前提条件（依赖判断本身能用）还没满足。
+1. **✅ 已完成（2026-07-26）**：`_find_dependents` bug 已修复——`python_importer.py` 新增 `_extract_imports` 从 AST 提取真实 import，`_find_dependents` 改为匹配 `submodules` 里 dict 的 `"name"` 键，`contract.dependencies` 死路径已删除。真实验证：Importer 正确提取 5 个 import，两个真实模块（PlayState 依赖 GameRenderer）的 `_find_dependents` 返回 `['PlayState']`。依赖传播链路首次真实跑通，此前"前提条件未满足"已解除，可以接入第二个真实模块测 affected 非空行为。
 2. 长期待定：是否给验证引擎新增"函数内部控制流安全"独立维度（区别于现有接口层检查），需要重新引入类似 CFG 的分析，但范围必须严格限定在"验证服务"，不能演变回 Codegen 优化老路。
 3. 无界当前未 commit 的 `play_state.py` 改动纯属内部实现调整，未触及对外接口，不适合作为跨模块验证案例。

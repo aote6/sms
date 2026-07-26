@@ -190,12 +190,11 @@ class ModuleRegistry:
         for name, mod in self.modules.items():
             if name == module_name:
                 continue
-            if hasattr(mod, 'submodules') and module_name in (mod.submodules or []):
+            submods = mod.submodules or []
+            if any(isinstance(s, dict) and s.get("name") == module_name for s in submods):
                 dependents.append(name)
-            if hasattr(mod, 'contract'):
-                deps = getattr(mod.contract, 'dependencies', [])
-                if module_name in deps:
-                    dependents.append(name)
+            # contract.dependencies 路径已移除：Contract类无此字段，
+            # 所有真实调用点都未传过该参数，是死代码（2026-07-26确认）
         return list(set(dependents))
 
     def _invalidate_module(self, module_name: str) -> None:

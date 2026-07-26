@@ -1,69 +1,44 @@
 {
-  "Analyzer": [
-    {
-      "name": "Analyzer",
-      "version": "1.0.0",
-      "package_type": "atomic",
-      "quality_state": "passed",
-      "origin": "handwritten",
-      "author": "SMS",
-      "capabilities": [
-        {
-          "name": "plan",
-          "description": "任务分解",
-          "input_type": "task:str",
-          "output_type": "steps:list"
-        },
-        {
-          "name": "remember",
-          "description": "记忆",
-          "input_type": "key:str,value:Any",
-          "output_type": "data:Any"
-        }
-      ],
-      "submodules": []
-    },
-    {
-      "name": "Analyzer",
-      "version": "2.0.0",
-      "package_type": "atomic",
-      "quality_state": "passed",
-      "origin": "handwritten",
-      "author": "SMS",
-      "capabilities": [
-        {
-          "name": "plan",
-          "description": "任务分解",
-          "input_type": "task:dict",
-          "output_type": "steps:list"
-        },
-        {
-          "name": "execute",
-          "description": "执行",
-          "input_type": "code:str",
-          "output_type": "result:str"
-        }
-      ],
-      "submodules": []
-    }
-  ],
   "GameRenderer": [
     {
       "name": "GameRenderer",
       "version": "1.0.0",
       "package_type": "atomic",
-      "quality_state": "pending",
+      "quality_state": "blank",
       "origin": "handwritten",
-      "author": "aote6",
+      "author": "",
       "capabilities": [
         {
           "name": "draw",
-          "description": "渲染当前帧到stdscr,纯副作用无返回值",
-          "input_type": "game:GameState",
+          "description": "渲染画面",
+          "input_type": "game",
           "output_type": "None"
         }
       ],
       "submodules": []
+    }
+  ],
+  "PlayState": [
+    {
+      "name": "PlayState",
+      "version": "1.0.0",
+      "package_type": "atomic",
+      "quality_state": "blank",
+      "origin": "handwritten",
+      "author": "",
+      "capabilities": [
+        {
+          "name": "update",
+          "description": "更新游戏状态",
+          "input_type": "dt",
+          "output_type": "None"
+        }
+      ],
+      "submodules": [
+        {
+          "name": "GameRenderer"
+        }
+      ]
     }
   ]
 }

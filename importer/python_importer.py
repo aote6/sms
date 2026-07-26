@@ -25,10 +25,23 @@ class PythonImporter:
             author=self._extract_author(path),
             capabilities=self._extract_capabilities(tree),
             contract=self._extract_contract(tree),
-            evidence=Evidence()
+            evidence=Evidence(),
+            submodules=self._extract_imports(tree)
         )
 
         return module
+
+    def _extract_imports(self, tree: ast.AST) -> list:
+        """提取本文件import的模块名，作为依赖声明的数据来源"""
+        imports = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    imports.append({"name": alias.name.split(".")[0]})
+            elif isinstance(node, ast.ImportFrom):
+                if node.module:
+                    imports.append({"name": node.module.split(".")[0]})
+        return imports
 
     def _is_dunder(self, name: str) -> bool:
         """检查是否是魔术方法"""
