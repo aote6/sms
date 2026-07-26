@@ -1,4 +1,16 @@
 from module import Module
+import os, sys
+sys.path.insert(0, os.path.expanduser("~/lu/core"))
+try:
+    import op_log
+except ImportError:
+    op_log = None
+from typing import Optional, List
+sys.path.insert(0, os.path.expanduser("~/lu/core"))
+try:
+    import op_log
+except ImportError:
+    op_log = None
 from typing import Optional, List
 import json
 from pathlib import Path
@@ -44,6 +56,9 @@ class ModuleRegistry:
         from invariants.module_completeness import check_module_completeness
         completeness = check_module_completeness(module)
         if not completeness["passed"]:
+            if op_log:
+                op_log.log_op("contract_check", "registry.register", "warning",
+                               detail=f"{module.name} 完整性不足: {completeness["errors"]}")
             print(f"[警告] {module.name} 完整性不足: {completeness["errors"]}")
         if module.name not in self.versions:
             self.versions[module.name] = []
