@@ -57,7 +57,7 @@ class BuildExecutor:
             package = self.packager.build(module.name, [artifact])
 
             # 获取路径
-            artifact_path = artifact.path if hasattr(artifact, 'path') else str(artifact)
+            artifact_path = str(artifact.path) if hasattr(artifact, "path") else str(artifact)
             package_path = str(package) if package else None
 
             # 保存到缓存

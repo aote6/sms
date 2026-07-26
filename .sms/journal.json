@@ -1,35 +1,14 @@
 {
-  "build_id": "8dbf74bc",
-  "timestamp": 1784555369.379302,
+  "build_id": "9292b1b2",
+  "timestamp": 1785062332.7861493,
   "status": "success",
   "modules": {
-    "Core": {
+    "KeyboardRenderer": {
       "status": "success",
-      "duration": 0,
-      "artifact": "cached",
+      "duration": 0.0015843750443309546,
+      "artifact": "dist/keyboardrenderer.py",
       "error": null,
-      "hash": "cached"
-    },
-    "Keyboard": {
-      "status": "success",
-      "duration": 0,
-      "artifact": "cached",
-      "error": null,
-      "hash": "cached"
-    },
-    "Theme": {
-      "status": "success",
-      "duration": 0,
-      "artifact": "cached",
-      "error": null,
-      "hash": "cached"
-    },
-    "IME": {
-      "status": "success",
-      "duration": 0,
-      "artifact": "cached",
-      "error": null,
-      "hash": "cached"
+      "hash": null
     }
   }
 }

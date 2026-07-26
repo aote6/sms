@@ -14,6 +14,7 @@ SimplePackager 目前是占位实现（直接返回 artifact 路径，不生成�
 不要去动 PythonBuilder 或 BuildExecutor。
 """
 
+from pathlib import Path
 from build.artifact import Artifact
 
 
@@ -22,7 +23,7 @@ class BackendAdapter:
         self._builder = python_builder
 
     def emit(self, ir):
-        filename = self._builder.build(ir)
+        filename = str(self._builder.build(ir))
         return Artifact.create(
             module=ir.name,
             version=ir.version,
