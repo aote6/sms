@@ -47,7 +47,7 @@ class Fingerprint:
         payload = {
             "name": module.name,
             "version": module.version,
-            "state": getattr(module, 'state', 'draft'),
+            "state": getattr(module, 'quality_state', 'draft'),
             "runtime": module.contract.runtime if module.contract else "python",
             "capabilities": caps,
         }

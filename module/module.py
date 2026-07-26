@@ -58,7 +58,6 @@ class Module:
     origin: str = Origin.HANDWRITTEN
     expires_at: float = 0.0
     implementation: str = ""
-    state: str = QualityState.BLANK
 
     def ready(self) -> bool:
         if self.contract is None:
@@ -75,6 +74,5 @@ class Module:
         """变更质量状态，返回是否成功"""
         if QualityState.can_transition(self.quality_state, new_state):
             self.quality_state = new_state
-            self.state = new_state
             return True
         return False
