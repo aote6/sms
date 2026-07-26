@@ -1,14 +1,10 @@
 """
-SMS Demo Entry Point (2026-07-26 重构版)
+SMS Demo Entry Point (2026-07-26)
 
 从 registry 里的模块出发，经过 invariants 完整性检查 -> BuildGraph 依赖排序
 -> BuildDriver(增量构建: 指纹+缓存+并行) -> RuntimeLoader 动态加载
-
-变更说明见 docs/handoffs 或对应交接文档，核心变化：assembly/ 已归档，
-不再作为知识图谱到构建计划的中转层。
 """
 
-from core import *
 from module import Module, Capability, Contract, Evidence, QualityState
 from registry import ModuleRegistry
 from resolver import GapResolver
@@ -21,30 +17,13 @@ from invariants.module_completeness import check_module_completeness
 from sms_build_adapters import BackendAdapter, SimplePackager
 
 
-# 1. 知识图谱 —— 仅作叙事性展示，不再驱动构建（assembly/已归档）
-graph_kg = KnowledgeGraph()
-problem = graph_kg.add_node(Node("输入法需要统一键盘", NodeType.PROBLEM))
-decision = graph_kg.add_node(Node("界面和输入引擎分离", NodeType.DECISION))
-module1 = graph_kg.add_node(Node("KeyboardRenderer", NodeType.MODULE))
-module2 = graph_kg.add_node(Node("PinyinEngine", NodeType.MODULE))
-module3 = graph_kg.add_node(Node("GestureDetector", NodeType.MODULE))
-product = graph_kg.add_node(Node("LingTi Keyboard", NodeType.PRODUCT))
-graph_kg.connect(product, problem, EdgeType.ANSWER)
-graph_kg.connect(problem, decision, EdgeType.ANSWER)
-graph_kg.connect(decision, module1, EdgeType.CREATE)
-graph_kg.connect(decision, module2, EdgeType.CREATE)
-graph_kg.connect(decision, module3, EdgeType.CREATE)
-
-print("【问题-决策-模块 知识图谱】")
-graph_kg.show()
-
-# 2. 模块仓库
+# 1. 模块仓库
 registry = ModuleRegistry()
 
 kb_module = Module(
     name="KeyboardRenderer",
     version="1.0.0",
-    quality_state=QualityState.PASSED,   # 原 state="ready"，按状态机语义映射
+    quality_state=QualityState.PASSED,
     capabilities=[
         Capability("render", "渲染键盘界面", "key_events", "display"),
         Capability("layout", "管理键盘布局", "config", "layout_data"),
@@ -57,17 +36,16 @@ registry.register(kb_module)
 py_module = Module(
     name="PinyinEngine",
     version="0.5.0",
-    quality_state=QualityState.BLANK,    # 原 state="draft"
+    quality_state=QualityState.BLANK,
     capabilities=[],
     contract=None,
     evidence=None,
 )
 registry.register(py_module)
 
-# 3. 依据"知识图谱里的模块节点" + "registry已注册模块" 建 BuildGraph
-module_node_names = {n.name for n in graph_kg.nodes.values() if n.node_type == NodeType.MODULE}
+# 2. 建 BuildGraph（从 registry 已注册模块）
 build_graph = BuildGraph()
-for name in module_node_names | set(registry.modules.keys()):
+for name in registry.modules.keys():
     build_graph.node(name)
 for name, module in registry.modules.items():
     for sub in (module.submodules or []):
@@ -75,12 +53,12 @@ for name, module in registry.modules.items():
         if dep_name:
             build_graph.add_dependency(name, dep_name)
 
-# 4. Gap Resolver —— 扫描 BuildGraph 节点，registry 里没有对应模块的自动生成 TODO
+# 3. Gap Resolver —— 扫描 BuildGraph 节点，没注册的自动生成 TODO
 gap_resolver = GapResolver(registry)
 gap_resolver.resolve_graph(build_graph)
 gap_resolver.summary()
 
-# 5. 只把"就绪"的模块标记为待构建
+# 4. 只把就绪的模块标记为待构建
 for name, module in registry.modules.items():
     if module.ready():
         build_graph.mark_dirty(name)
@@ -89,7 +67,7 @@ for name, module in registry.modules.items():
 
 build_graph.summary()
 
-# 6. 定界完整性检查（构建前，对所有已注册模块检查，不只是 ready 的）
+# 5. 定界完整性检查
 print("\n【定界: 模块完整性检查】")
 for name, module in registry.modules.items():
     result = check_module_completeness(module)
@@ -97,7 +75,7 @@ for name, module in registry.modules.items():
     detail = "OK" if not result["errors"] else "; ".join(result["errors"])
     print(f"  {mark} {name}: {detail}")
 
-# 7. 增量构建（指纹 + 缓存 + 并行 + journal）
+# 6. 增量构建
 print("\n" + "=" * 60)
 print("构建系统 (build/ 增量构建引擎)")
 print("=" * 60)
@@ -121,7 +99,7 @@ driver = BuildDriver(scheduler=scheduler, executor=executor, workers=4)
 built = driver.run(build_graph)
 driver.journal.summary()
 
-# 8. 加载并验证产物
+# 7. 加载验证
 print("\n【运行时加载验证】")
 loader = RuntimeLoader()
 
@@ -149,8 +127,7 @@ for result in driver.results:
     except Exception as e:
         print(f"  ❌ 加载失败: {result.task}: {e}")
 
-# build/driver.py 对缓存命中的任务不写入 driver.results（已知缺口，
-# 见交接文档），这里在 main.py 侧补一次兜底校验，不改 driver.py 本身
+# 缓存兜底校验
 for name, module in registry.modules.items():
     if name in validated or not module.ready():
         continue

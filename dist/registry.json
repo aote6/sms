@@ -35,24 +35,5 @@
       "capabilities": [],
       "submodules": []
     }
-  ],
-  "GestureDetector": [
-    {
-      "name": "GestureDetector",
-      "version": "0.0.1",
-      "package_type": "atomic",
-      "quality_state": "pending",
-      "origin": "handwritten",
-      "author": "",
-      "capabilities": [
-        {
-          "name": "TODO",
-          "description": "需要实现 GestureDetector 的能力",
-          "input_type": "any",
-          "output_type": "any"
-        }
-      ],
-      "submodules": []
-    }
   ]
 }
