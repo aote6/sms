@@ -1,11 +1,231 @@
 {
-  "KeyboardRenderer": {
-    "module": "KeyboardRenderer",
-    "fingerprint": "8333a3a7d22d27c74e0a02b798a64dc898d6b27c8c8e384f059e44e6c7f180f9",
-    "artifact": "dist/keyboardrenderer.py",
+  "archive": {
+    "module": "archive",
+    "fingerprint": "1e3cb9afb77865e04581acd4f1830c63523ae926c3898fe2d5b0c09d78d526a0",
+    "artifact": "",
     "abi": "",
-    "package": "dist/keyboardrenderer.py",
-    "timestamp": 1785062332.7852263,
+    "package": "",
+    "timestamp": 1785069863.1523316,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "backup": {
+    "module": "backup",
+    "fingerprint": "a214d15d2a5932eee8bf12b130ad8d1234ab769a67c53fbe1b59d28b6bc498c7",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.170021,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "backup_move": {
+    "module": "backup_move",
+    "fingerprint": "d88c3b827f5a017017d26d8c9fc679a53bacdccbc0470bf4dd420c5075b40976",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.1862733,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "bad_name": {
+    "module": "bad_name",
+    "fingerprint": "5fc21ff31244a441e4bf68642561c8974c52a8c0813dbda0c3410826e99639ba",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.1988895,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "batch_rename": {
+    "module": "batch_rename",
+    "fingerprint": "96c63ae1005196473ee8011affc6c6a26050d965e2a33018dea840a2f6592d6e",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.2114172,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "clean": {
+    "module": "clean",
+    "fingerprint": "cbb957ddd6a99845466054b7f3666a4ccf53b596ef36eeed54095f818fea5a5f",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.223521,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "clean_state": {
+    "module": "clean_state",
+    "fingerprint": "d541ee48d3f424a4760c70528763560925729ac73390db4f7db2293250105b83",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.236052,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "empty_arg": {
+    "module": "empty_arg",
+    "fingerprint": "9471a954c068d1d1a306fc2dce68d38217cb8c3998fc276817c3664e871cd453",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.2483764,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "list": {
+    "module": "list",
+    "fingerprint": "994f987e30aa610670ce236670fcb7839160f5db60de2deb84411b9a25a0a7c0",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.2608476,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "missing_arg": {
+    "module": "missing_arg",
+    "fingerprint": "dddc36aae588c17911a589322fd0b396eacc780132f96342b3b560e96c01fa4a",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.2732716,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "photo_sort": {
+    "module": "photo_sort",
+    "fingerprint": "def83bb1b6843f4bb8dc67473bdd66b0e8062e1d7540c18a41ff7eb41136b983",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.287212,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "read": {
+    "module": "read",
+    "fingerprint": "4ddfb5df148925b818d584a72341891b77d169840bca25274ee2a25ab88c3af8",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.2995994,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "rename_test": {
+    "module": "rename_test",
+    "fingerprint": "a55d28c336b7e21ae98e3ae57c2abeb12dec1b05ca932dd72d9d4b7075dfc379",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.3152783,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "replace": {
+    "module": "replace",
+    "fingerprint": "1942dfdc321e7190ab0f42f71e32db8353b83b3567e1e9be4470ca2a6e19a64f",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.3283372,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "replace_v2": {
+    "module": "replace_v2",
+    "fingerprint": "81fc0df72b97f9f3df3f3383faa3b4dd408c083bd75b2eb55e419886bcd7fca1",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.3408659,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "roundtrip": {
+    "module": "roundtrip",
+    "fingerprint": "c235d319fdbc743dfab3edb98fc7e570542f43a2b38c977db4d58db290a2028a",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.3591306,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "sort": {
+    "module": "sort",
+    "fingerprint": "d4c737123317a55959271c87fc852091d18f5779f7f1da29bff8f19985257a40",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.3728697,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "sync": {
+    "module": "sync",
+    "fingerprint": "c987e5b9b199ee5a217bfd20be29498cde4611f308eb2480869d6e0b7926ed50",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.3873236,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "test_chain": {
+    "module": "test_chain",
+    "fingerprint": "376108de43eed07b9e1113c9c8a11ce4248447303c49877d6aa803bf32dfb641",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.4034352,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "test_contract_error": {
+    "module": "test_contract_error",
+    "fingerprint": "1fee5addafcecb47815598846f0885629a4ca1dda631f4c03a9ab87e58bc41b2",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.4176133,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "test_param_clean": {
+    "module": "test_param_clean",
+    "fingerprint": "b4be267d340af2aca5f776253e0bdc94e99587a940ee0f68a034703ffaf602a7",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.434481,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "test_real": {
+    "module": "test_real",
+    "fingerprint": "733bda8855b063b3a1dc1f17f26b65bef09846307d01284004f540ebda0f3a1e",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.450816,
+    "version": "1.0.0",
+    "runtime": "python"
+  },
+  "test_var": {
+    "module": "test_var",
+    "fingerprint": "281ce882c986f910f8c1e7f6d6a35e2bd757b74ab18e57c61d1ede3355e853a5",
+    "artifact": "",
+    "abi": "",
+    "package": "",
+    "timestamp": 1785069863.4640265,
     "version": "1.0.0",
     "runtime": "python"
   }
