@@ -39,7 +39,7 @@ SMS 是：管理模块间关系（谁依赖谁、接口对不对）+ 验证演�
 ## 确认保留的部分（有真实调用链，验证过）
 
 - `ir/`（IRModule, IRFunction, IRCompiler, IROptimizer，271行）——IROptimizer 确认只做"清洁/规范化"，不做性能优化，无害
-- `builder/` —— 现在只剩 `param_checker.py`、`return_checker.py`、`__init__.py`
+- `builder/` —— 现在只剩 `param_checker.py`、`return_checker.py`、`__init__.py`。两个 checker 是独立检查逻辑，代码完整但当前无任何调用方引用（2026-07-26 grep 全项目确认），未接入验证调用链。
 - `backend/python/builder.py` —— 被 emit.py 和 runtime 依赖
 - `sms/factory/emit.py` —— 代码生成器（生成 dist/ 产品，不是 Codegen 优化）
 
@@ -53,7 +53,7 @@ SMS 是：管理模块间关系（谁依赖谁、接口对不对）+ 验证演�
 - `.smsrepo/*/abi.json`（params/returns 格式，带 .cpp/.rs）是旧多语言 Codegen 时代遗留的另一套 schema，**不要**参照这套格式写新模块
 - `upgrade_module()` 状态机完整约定写在 `registry/registry.py` 文件头部 docstring，是唯一权威来源，每次先 `head -30 registry/registry.py` 确认，不要凭记忆复述
 
-## 验证引擎：已跑通的三层检查
+## 验证检查器：独立逻辑，未接入调用链（2026-07-26核实）
 
 1. 参数个数检查（inspect.signature）
 2. 参数类型检查

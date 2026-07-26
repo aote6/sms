@@ -1,5 +1,5 @@
 from core.node import Node, NodeType
-from module import Module, Capability, Contract, Evidence
+from module import Module, Capability, Contract, Evidence, QualityState
 from registry import ModuleRegistry
 from assembly import AssemblyPlan
 from typing import List
@@ -24,7 +24,7 @@ class GapResolver:
         return Module(
             name=name,
             version="0.0.1",
-            state="todo",
+            quality_state=QualityState.PENDING,
             capabilities=[
                 Capability(
                     name="TODO",
